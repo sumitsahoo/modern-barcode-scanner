@@ -33,4 +33,11 @@ export { SCAN_INTERVAL_MS, VIBRATION_DURATION_MS } from "./constants/scanner";
 export { isPhone, getBestRearCamera, getMediaConstraints, stopAllTracks } from "./utils/barcodeHelpers";
 
 // Sub-components (for custom implementations)
-export { ScanLine, ScannerControls, IconRotateCamera, IconTorchOn, IconTorchOff, IconCameraPlaceholder } from "./components";
+export {
+	ScanLine,
+	ScannerControls,
+	IconRotateCamera,
+	IconTorchOn,
+	IconTorchOff,
+	IconCameraPlaceholder,
+} from "./components";

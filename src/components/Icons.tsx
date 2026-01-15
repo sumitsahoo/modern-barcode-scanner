@@ -1,7 +1,14 @@
 import type { SVGProps } from "react";
 
 export const IconRotateCamera = (props: SVGProps<SVGSVGElement>) => (
-	<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+	<svg
+		xmlns="http://www.w3.org/2000/svg"
+		fill="none"
+		viewBox="0 0 24 24"
+		strokeWidth={1.5}
+		stroke="currentColor"
+		{...props}
+	>
 		<title>Rotate Camera</title>
 		<path
 			strokeLinecap="round"
@@ -12,7 +19,14 @@ export const IconRotateCamera = (props: SVGProps<SVGSVGElement>) => (
 );
 
 export const IconTorchOn = (props: SVGProps<SVGSVGElement>) => (
-	<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+	<svg
+		xmlns="http://www.w3.org/2000/svg"
+		fill="none"
+		viewBox="0 0 24 24"
+		strokeWidth={1.5}
+		stroke="currentColor"
+		{...props}
+	>
 		<title>Torch On</title>
 		<path
 			strokeLinecap="round"

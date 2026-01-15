@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FacingMode } from "../constants/camera";
-import { CANVAS_CONTEXT_OPTIONS, MAX_SCAN_DIMENSION, SCAN_INTERVAL_MS, VIBRATION_DURATION_MS } from "../constants/scanner";
+import {
+	CANVAS_CONTEXT_OPTIONS,
+	MAX_SCAN_DIMENSION,
+	SCAN_INTERVAL_MS,
+	VIBRATION_DURATION_MS,
+} from "../constants/scanner";
 import type { ScanResult, ScannerConfig, ScannerState } from "../types";
 import { getMediaConstraints, stopAllTracks } from "../utils/barcodeHelpers";
 import type { WorkerResponse } from "../workers/scanner.worker";

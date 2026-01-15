@@ -27,12 +27,7 @@ const ScannerControls = ({
 		<div className="mbs-controls">
 			{/* Rotate Camera Button */}
 			{shouldShowRotateButton && (
-				<button
-					type="button"
-					className="mbs-control-btn"
-					onClick={onSwitchCamera}
-					aria-label="Switch camera"
-				>
+				<button type="button" className="mbs-control-btn" onClick={onSwitchCamera} aria-label="Switch camera">
 					<IconRotateCamera className="mbs-icon" />
 				</button>
 			)}

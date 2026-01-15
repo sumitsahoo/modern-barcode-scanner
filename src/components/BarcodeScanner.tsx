@@ -56,7 +56,7 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
 			showTorchButton = true,
 			style,
 		},
-		ref
+		ref,
 	) => {
 		const {
 			scannerState,
@@ -92,7 +92,7 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
 				toggleTorch: handleToggleTorch,
 				getState: (): ScannerState => scannerState,
 			}),
-			[handleScan, handleStopScan, handleSwitchCamera, handleToggleTorch, scannerState]
+			[handleScan, handleStopScan, handleSwitchCamera, handleToggleTorch, scannerState],
 		);
 
 		// Auto-cleanup on unmount
@@ -107,14 +107,7 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
 				{/* Camera Feed */}
 				<div className="mbs-video-container">
 					<IconCameraPlaceholder className="mbs-placeholder-icon" />
-					<video
-						title="Barcode Scanner"
-						ref={videoRef}
-						autoPlay
-						muted
-						playsInline
-						className="mbs-video"
-					/>
+					<video title="Barcode Scanner" ref={videoRef} autoPlay muted playsInline className="mbs-video" />
 				</div>
 
 				{/* Hidden canvas for image processing */}
@@ -140,7 +133,7 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
 				)}
 			</div>
 		);
-	}
+	},
 );
 
 BarcodeScanner.displayName = "BarcodeScanner";
