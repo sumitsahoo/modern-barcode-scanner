@@ -1,0 +1,162 @@
+/**
+ * Modern Barcode Scanner - CSS Styles
+ * Import this file to get default styling for the scanner component.
+ */
+
+/* Container */
+.mbs-container {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	overflow: hidden;
+	background-color: #000;
+}
+
+/* Video container */
+.mbs-video-container {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+/* Placeholder icon */
+.mbs-placeholder-icon {
+	position: absolute;
+	z-index: 10;
+	width: 40vw;
+	height: 40vw;
+	max-width: 200px;
+	max-height: 200px;
+	color: rgba(255, 255, 255, 0.3);
+}
+
+@media (min-width: 768px) {
+	.mbs-placeholder-icon {
+		width: 30vw;
+		height: 30vw;
+	}
+}
+
+/* Video element */
+.mbs-video {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	position: relative;
+	z-index: 20;
+}
+
+/* Controls container */
+.mbs-controls {
+	position: absolute;
+	bottom: 2rem;
+	left: 50%;
+	transform: translateX(-50%);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 1rem;
+	z-index: 30;
+	background-color: rgba(0, 0, 0, 0.5);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 9999px;
+	padding: 0.5rem 1rem;
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+}
+
+/* Control button */
+.mbs-control-btn {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 50%;
+	border: none;
+	background-color: rgba(255, 255, 255, 0.1);
+	color: white;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.mbs-control-btn:hover {
+	background-color: rgba(255, 255, 255, 0.2);
+}
+
+.mbs-control-btn:active {
+	transform: scale(0.9);
+}
+
+.mbs-control-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Icon */
+.mbs-icon {
+	width: 1.5rem;
+	height: 1.5rem;
+}
+
+/* Scan line container */
+.mbs-scan-line-container {
+	position: absolute;
+	width: 80%;
+	left: 10%;
+	top: 20%;
+	z-index: 40;
+	pointer-events: none;
+	animation: mbs-scan 2s ease-in-out infinite;
+	will-change: transform;
+}
+
+/* Scan line */
+.mbs-scan-line {
+	width: 100%;
+	height: 2px;
+	background-color: #ef4444;
+	box-shadow: 0 0 15px 2px rgba(239, 68, 68, 0.8);
+}
+
+/* Scan line trails */
+.mbs-scan-line-trail-down {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+	height: 6rem;
+	background: linear-gradient(to bottom, transparent, #ef4444);
+	opacity: 0.3;
+}
+
+.mbs-scan-line-trail-up {
+	position: absolute;
+	top: 0;
+	width: 100%;
+	height: 6rem;
+	background: linear-gradient(to bottom, #ef4444, transparent);
+	opacity: 0.3;
+}
+
+/* Scan animation */
+@keyframes mbs-scan {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(60vh);
+	}
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+	.mbs-container {
+		background-color: #000;
+	}
+}

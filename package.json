@@ -1,0 +1,73 @@
+{
+    "name": "modern-barcode-scanner",
+    "version": "1.0.0",
+    "description": "A high-performance barcode scanner React component with optimized detection, torch control, and camera switching",
+    "author": "Sumit Sahoo",
+    "license": "MIT",
+    "type": "module",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        },
+        "./styles.css": "./dist/modern-barcode-scanner.css"
+    },
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE"
+    ],
+    "sideEffects": [
+        "**/*.css"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/sumitsahoo/modern-barcode-scanner.git"
+    },
+    "bugs": {
+        "url": "https://github.com/sumitsahoo/modern-barcode-scanner/issues"
+    },
+    "homepage": "https://github.com/sumitsahoo/modern-barcode-scanner#readme",
+    "keywords": [
+        "barcode",
+        "scanner",
+        "qr-code",
+        "react",
+        "zbar",
+        "camera",
+        "web-worker",
+        "pwa"
+    ],
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build && npm run build:types",
+        "build:types": "tsc --emitDeclarationOnly --declaration --outDir dist",
+        "preview": "vite preview",
+        "prepublishOnly": "npm run build",
+        "format": "npx biome format ./ --write",
+        "lint": "npx biome lint ./",
+        "lint:fix": "npx biome lint ./ --write"
+    },
+    "peerDependencies": {
+        "react": ">=18.0.0",
+        "react-dom": ">=18.0.0"
+    },
+    "dependencies": {
+        "@undecaf/zbar-wasm": "^0.11.0"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "2.3.11",
+        "@types/react": "^19.2.8",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^5.1.2",
+        "react": "^19.2.3",
+        "react-dom": "^19.2.3",
+        "typescript": "^5.9.3",
+        "vite": "^7.3.1",
+        "vite-plugin-dts": "^4.5.4"
+    }
+}

@@ -1,0 +1,20 @@
+# .npmignore
+# Files to exclude from npm package
+
+# Source files (dist is included)
+src/
+
+# Config files
+tsconfig.json
+vite.config.ts
+biome.json
+.gitignore
+
+# Demo/example files
+demo/
+examples/
+
+# Dev files
+*.log
+.DS_Store
+node_modules/
