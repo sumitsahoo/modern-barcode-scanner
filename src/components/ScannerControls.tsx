@@ -22,6 +22,7 @@ const ScannerControls = ({
 	onToggleTorch,
 }: ScannerControlsProps) => {
 	if (!isScanning) return null;
+	if (!shouldShowRotateButton && !shouldShowTorchButton) return null;
 
 	return (
 		<div className="mbs-controls">

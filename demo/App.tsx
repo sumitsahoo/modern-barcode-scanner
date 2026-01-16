@@ -28,8 +28,8 @@ const styles = {
 	controlsContainerScanning: {
 		background: "rgba(0, 0, 0, 0.5)",
 		border: "1px solid rgba(255, 255, 255, 0.1)",
-		borderRadius: "9999px",
-		padding: "0.5rem 1rem",
+		borderRadius: "50%",
+		padding: "0.5rem",
 		backdropFilter: "blur(16px)",
 	},
 	scanButton: {
