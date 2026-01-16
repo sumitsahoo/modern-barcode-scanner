@@ -1,5 +1,5 @@
-import react from "@vitejs/plugin-react";
 import { resolve } from "node:path";
+import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
 
@@ -12,6 +12,13 @@ export default defineConfig({
 			exclude: ["src/**/*.test.ts", "src/**/*.test.tsx", "demo"],
 		}),
 	],
+	server: {
+		port: 8080,
+		strictPort: true,
+		host: true,
+		cors: true,
+		allowedHosts: true, // To allow any host to access your server
+	},
 	css: {
 		// Process CSS files
 	},
