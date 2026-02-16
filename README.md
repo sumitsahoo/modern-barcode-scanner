@@ -103,7 +103,6 @@ function App() {
 | `enableVibration` | `boolean` | `true` | Enable haptic feedback on scan |
 | `vibrationDuration` | `number` | `200` | Vibration duration (ms) |
 | `enableSound` | `boolean` | `false` | Enable sound feedback on scan |
-| `beepSoundUrl` | `string` | - | Custom beep sound URL |
 | `initialFacingMode` | `'user' \| 'environment'` | `'environment'` | Initial camera |
 | `className` | `string` | - | Custom CSS class |
 | `style` | `React.CSSProperties` | - | Custom inline styles |

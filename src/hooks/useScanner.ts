@@ -6,8 +6,8 @@ import {
 	SCAN_INTERVAL_MS,
 	VIBRATION_DURATION_MS,
 } from "../constants/scanner";
-import type { ScanResult, ScannerConfig, ScannerState } from "../types";
-import { getMediaConstraints, stopAllTracks } from "../utils/barcodeHelpers";
+import type { ScannerConfig, ScannerState, ScanResult } from "../types";
+import { getMediaConstraints, playScanSound, stopAllTracks } from "../utils";
 import type { WorkerResponse } from "../workers/scanner.worker";
 
 interface UseScannerOptions extends ScannerConfig {
@@ -28,7 +28,6 @@ export const useScanner = ({
 	enableVibration = true,
 	vibrationDuration = VIBRATION_DURATION_MS,
 	enableSound = false,
-	beepSoundUrl,
 	initialFacingMode = "environment",
 }: UseScannerOptions) => {
 	const [scannerState, setScannerState] = useState<ScannerState>({
@@ -40,7 +39,6 @@ export const useScanner = ({
 	// Refs for DOM elements
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const canvasRef = useRef<HTMLCanvasElement>(null);
-	const audioRef = useRef<HTMLAudioElement>(null);
 	const contextRef = useRef<CanvasRenderingContext2D | null>(null);
 
 	// Refs for scanning control
@@ -85,8 +83,8 @@ export const useScanner = ({
 			window?.navigator?.vibrate?.(vibrationDuration);
 		}
 
-		if (enableSound && audioRef.current) {
-			audioRef.current.play().catch(() => {});
+		if (enableSound) {
+			playScanSound();
 		}
 
 		onScan(data);
@@ -317,8 +315,6 @@ export const useScanner = ({
 		scannerState,
 		videoRef,
 		canvasRef,
-		audioRef,
-		beepSoundUrl,
 		handleScan,
 		handleStopScan,
 		handleSwitchCamera,

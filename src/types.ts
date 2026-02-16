@@ -52,10 +52,6 @@ export interface ScannerConfig {
 	 */
 	enableSound?: boolean;
 	/**
-	 * Custom beep sound URL
-	 */
-	beepSoundUrl?: string;
-	/**
 	 * Initial camera facing mode
 	 * @default 'environment'
 	 */

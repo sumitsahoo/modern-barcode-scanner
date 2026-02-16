@@ -48,7 +48,6 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
 			enableVibration = true,
 			vibrationDuration,
 			enableSound = false,
-			beepSoundUrl,
 			initialFacingMode = "environment",
 			className = "",
 			showScanLine = true,
@@ -58,26 +57,17 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
 		},
 		ref,
 	) => {
-		const {
-			scannerState,
-			videoRef,
-			canvasRef,
-			audioRef,
-			handleScan,
-			handleStopScan,
-			handleSwitchCamera,
-			handleToggleTorch,
-		} = useScanner({
-			onScan,
-			onError,
-			onStateChange,
-			scanInterval,
-			enableVibration,
-			vibrationDuration,
-			enableSound,
-			beepSoundUrl,
-			initialFacingMode,
-		});
+		const { scannerState, videoRef, canvasRef, handleScan, handleStopScan, handleSwitchCamera, handleToggleTorch } =
+			useScanner({
+				onScan,
+				onError,
+				onStateChange,
+				scanInterval,
+				enableVibration,
+				vibrationDuration,
+				enableSound,
+				initialFacingMode,
+			});
 
 		const { isScanning, facingMode, isTorchOn } = scannerState;
 		const isPhoneDevice = isPhone();
@@ -125,12 +115,6 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
 					onSwitchCamera={handleSwitchCamera}
 					onToggleTorch={handleToggleTorch}
 				/>
-
-				{/* Audio for beep sound */}
-				{enableSound && beepSoundUrl && (
-					// biome-ignore lint/a11y/useMediaCaption: Beep sound only
-					<audio ref={audioRef} src={beepSoundUrl} preload="auto" />
-				)}
 			</div>
 		);
 	},
