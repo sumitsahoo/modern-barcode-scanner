@@ -282,6 +282,8 @@ This library is built for speed and reliability:
 
 MIT © [Sumit Sahoo](https://github.com/sumitsahoo)
 
+Please refer to the [LICENSE](./LICENSE) file for the full text.
+
 ---
 
 ## 🤝 Credits
