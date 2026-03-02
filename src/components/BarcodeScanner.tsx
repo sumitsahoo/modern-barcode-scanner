@@ -110,7 +110,7 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
     return (
       <div className={`mbs-container ${className}`} style={containerStyle}>
         {/* Camera Feed */}
-        <div className="mbs-video-container" role="region" aria-label="Barcode scanner viewfinder">
+        <section className="mbs-video-container" aria-label="Barcode scanner viewfinder">
           <IconCameraPlaceholder className="mbs-placeholder-icon" />
           <video
             title="Barcode Scanner"
@@ -120,7 +120,7 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
             playsInline
             className="mbs-video"
           />
-        </div>
+        </section>
 
         {/* Hidden canvas for image processing */}
         <canvas ref={canvasRef} hidden />
