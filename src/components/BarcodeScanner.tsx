@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle } from "react";
 import { useScanner } from "../hooks/useScanner";
+import { SCANNER_THEME } from "../constants/theme";
 import type { BarcodeScannerProps, BarcodeScannerRef, ScannerState } from "../types";
 import { isPhone } from "../utils/barcodeHelpers";
 import { IconCameraPlaceholder } from "./Icons";
@@ -54,7 +55,7 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
 			showCameraSwitch = true,
 			showTorchButton = true,
 			style,
-			themeColor = "#4db8a8",
+			themeColor = SCANNER_THEME.primary,
 		},
 		ref,
 	) => {

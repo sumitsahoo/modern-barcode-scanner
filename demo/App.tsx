@@ -207,7 +207,7 @@ function App() {
 	const [result, setResult] = useState<ScanResult | null>(null);
 	const [state, setState] = useState<ScannerState | null>(null);
 	const [copied, setCopied] = useState(false);
-	const [themeColor, setThemeColor] = useState("#4db8a8");
+	const [themeColor, setThemeColor] = useState<string>("#4db8a8");
 
 	const dynamicStyles = getStyles(themeColor);
 

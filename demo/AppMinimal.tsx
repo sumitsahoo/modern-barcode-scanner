@@ -9,6 +9,7 @@ function AppMinimal() {
 	const [result, setResult] = useState<string | null>(null);
 	const [isScanning, setIsScanning] = useState(false);
 	const PRIMARY_COLOR = "#4db8a8";
+	const STOP_COLOR = "#ef4444";
 
 	const handleScan = useCallback((scanResult: ScanResult) => {
 		setResult(`${scanResult.typeName}: ${scanResult.scanData}`);
@@ -39,7 +40,7 @@ function AppMinimal() {
 				onScan={handleScan}
 				onError={handleError}
 				onStateChange={handleStateChange}
-				themeColor={PRIMARY_COLOR}
+			// By omitting themeColor, we test the library's internal default CSS
 			/>
 
 			{/* Simple controls */}
@@ -64,7 +65,7 @@ function AppMinimal() {
 						fontSize: 16,
 						borderRadius: 8,
 						border: "none",
-						background: isScanning ? "#ef4444" : PRIMARY_COLOR,
+						background: isScanning ? STOP_COLOR : PRIMARY_COLOR,
 						color: "white",
 						cursor: "pointer",
 					}}
