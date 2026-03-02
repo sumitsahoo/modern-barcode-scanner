@@ -50,6 +50,17 @@ export const convertToGrayscale = (imageData: ImageData): ImageData => {
  * @returns Device ID of the best rear camera or null
  */
 export const getBestRearCamera = async (): Promise<string | null> => {
+  // Request global permissions first so device labels are populated
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    for (const track of stream.getTracks()) {
+      track.stop();
+    }
+  } catch (err) {
+    console.warn("Camera permission denied or not available", err);
+    return null;
+  }
+
   const devices = await navigator.mediaDevices.enumerateDevices();
   const videoDevices = devices.filter((device) => device.kind === "videoinput");
 

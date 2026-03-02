@@ -16,6 +16,38 @@ interface UseScannerOptions extends ScannerConfig {
   onStateChange?: (state: ScannerState) => void;
 }
 
+// Module-level Web Worker caching for React 18 Strict Mode compatibility
+let sharedWorker: Worker | null = null;
+let workerRefCount = 0;
+let terminateTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+const getSharedWorker = (): Worker => {
+  if (terminateTimeoutId) {
+    clearTimeout(terminateTimeoutId);
+    terminateTimeoutId = null;
+  }
+  if (!sharedWorker) {
+    sharedWorker = new Worker(new URL("../workers/scanner.worker.ts", import.meta.url), {
+      type: "module",
+    });
+  }
+  workerRefCount++;
+  return sharedWorker;
+};
+
+const releaseSharedWorker = (): void => {
+  workerRefCount--;
+  if (workerRefCount <= 0) {
+    // Delay termination to handle React 18 Strict Mode double-invocations
+    terminateTimeoutId = setTimeout(() => {
+      if (workerRefCount <= 0 && sharedWorker) {
+        sharedWorker.terminate();
+        sharedWorker = null;
+      }
+    }, 100);
+  }
+};
+
 /**
  * Custom hook for barcode scanning logic and camera state management
  * Handles video stream, barcode detection, and camera controls
@@ -90,13 +122,11 @@ export const useScanner = ({
     onScan(data);
   };
 
-  // Initialize Web Worker - only once on mount
+  // Initialize Web Worker - uses shared worker with delayed cleanup
   useEffect(() => {
-    workerRef.current = new Worker(new URL("../workers/scanner.worker.ts", import.meta.url), {
-      type: "module",
-    });
+    workerRef.current = getSharedWorker();
 
-    workerRef.current.onmessage = (e: MessageEvent<WorkerResponse>) => {
+    const handleMessage = (e: MessageEvent<WorkerResponse>) => {
       const { found, data, sessionId } = e.data;
       isWorkerBusy.current = false;
 
@@ -106,16 +136,21 @@ export const useScanner = ({
       }
     };
 
-    workerRef.current.onerror = (error) => {
+    const handleError = (error: ErrorEvent) => {
       isWorkerBusy.current = false;
       onError?.(new Error(error.message));
     };
 
+    workerRef.current.addEventListener("message", handleMessage);
+    workerRef.current.addEventListener("error", handleError);
+
     return () => {
       if (workerRef.current) {
-        workerRef.current.terminate();
+        workerRef.current.removeEventListener("message", handleMessage);
+        workerRef.current.removeEventListener("error", handleError);
         workerRef.current = null;
       }
+      releaseSharedWorker();
     };
   }, [onError]);
 

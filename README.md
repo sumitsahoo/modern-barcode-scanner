@@ -95,6 +95,21 @@ function App() {
 }
 ```
 
+### WebAssembly (WASM) Configuration
+
+Under the hood, this library uses `@undecaf/zbar-wasm` which relies on WebAssembly. Depending on your bundler, you may need to explicitly exclude it from dependency optimization or configure it to serve `.wasm` files correctly.
+
+**Vite Example (`vite.config.ts`):**
+
+```typescript
+export default defineConfig({
+  // ... other config
+  optimizeDeps: {
+    exclude: ['@undecaf/zbar-wasm']
+  }
+});
+```
+
 ---
 
 ## 📖 API Reference
