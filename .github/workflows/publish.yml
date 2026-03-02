@@ -1,0 +1,42 @@
+name: Publish Package to npm
+
+on:
+  release:
+    types: [published]
+  # Alternatively, you can trigger on push to main with specific tags
+  # push:
+  #   tags:
+  #     - 'v*'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    
+    # Required for npm Trusted Publishing (OIDC)
+    permissions:
+      contents: read
+      id-token: write
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      # Install dependencies using npm ci for clean, deterministic installs
+      - name: Install dependencies
+        run: npm ci
+
+      # Build the package
+      - name: Build and lint
+        run: |
+          npm run lint
+          npm run build
+
+      # Publish using Trusted Publishing (--provenance)
+      - name: Publish to npm
+        run: npm publish --provenance
