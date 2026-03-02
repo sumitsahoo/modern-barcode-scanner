@@ -22,9 +22,9 @@ export const VIBRATION_DURATION_MS = 200;
  * - desynchronized: Allows canvas to bypass event loop for faster rendering
  */
 export const CANVAS_CONTEXT_OPTIONS: CanvasRenderingContext2DSettings = {
-	willReadFrequently: true,
-	alpha: false,
-	desynchronized: true,
+  willReadFrequently: true,
+  alpha: false,
+  desynchronized: true,
 };
 
 /**

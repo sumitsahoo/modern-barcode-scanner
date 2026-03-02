@@ -18,11 +18,11 @@ export { useScanner } from "./hooks";
 
 // Types
 export type {
-	BarcodeScannerProps,
-	BarcodeScannerRef,
-	ScannerConfig,
-	ScannerState,
-	ScanResult,
+  BarcodeScannerProps,
+  BarcodeScannerRef,
+  ScannerConfig,
+  ScannerState,
+  ScanResult,
 } from "./types";
 
 // Constants
@@ -30,14 +30,19 @@ export { FACING_MODE, type FacingMode } from "./constants/camera";
 export { SCAN_INTERVAL_MS, VIBRATION_DURATION_MS } from "./constants/scanner";
 
 // Utilities (for advanced usage)
-export { isPhone, getBestRearCamera, getMediaConstraints, stopAllTracks } from "./utils/barcodeHelpers";
+export {
+  isPhone,
+  getBestRearCamera,
+  getMediaConstraints,
+  stopAllTracks,
+} from "./utils/barcodeHelpers";
 
 // Sub-components (for custom implementations)
 export {
-	ScanLine,
-	ScannerControls,
-	IconRotateCamera,
-	IconTorchOn,
-	IconTorchOff,
-	IconCameraPlaceholder,
+  ScanLine,
+  ScannerControls,
+  IconRotateCamera,
+  IconTorchOn,
+  IconTorchOff,
+  IconCameraPlaceholder,
 } from "./components";

@@ -1,74 +1,80 @@
-# Modern Barcode Scanner
+<div align="center">
+  <h1>📷 Modern Barcode Scanner</h1>
+  <p>A high-performance barcode scanner React component with optimized detection, camera switching, torch control, and automatic phone detection.</p>
 
-A high-performance barcode scanner React component with optimized detection, camera switching, torch control, and automatic phone detection.
+  [![npm version](https://badge.fury.io/js/modern-barcode-scanner.svg)](https://www.npmjs.com/package/modern-barcode-scanner)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+</div>
 
-[![npm version](https://badge.fury.io/js/modern-barcode-scanner.svg)](https://www.npmjs.com/package/modern-barcode-scanner)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+---
 
-## Features
+## ✨ Features
 
-- 🚀 **High Performance**: Web Worker-based scanning with optimized grayscale conversion
-- 📱 **Mobile Optimized**: Automatic phone detection with appropriate camera selection
-- 🔦 **Torch Control**: Built-in torch/flash support for low-light scanning
-- 🔄 **Camera Switching**: Easy switching between front and back cameras
-- 📷 **Smart Camera Selection**: Automatically selects the best rear camera (avoids ultra-wide/telephoto)
-- 🎯 **Session Management**: Prevents stale results with session-based tracking
-- 🎨 **Customizable UI**: CSS-based styling with sensible defaults
-- 📦 **TypeScript Support**: Full type definitions included
-- 🔊 **Feedback Options**: Haptic vibration and optional sound feedback
+- 🚀 **High Performance**: Web Worker-based scanning with optimized grayscale conversion.
+- 📱 **Mobile Optimized**: Automatic phone detection with appropriate camera selection.
+- 🔦 **Torch Control**: Built-in torch/flash support for low-light scanning.
+- 🔄 **Camera Switching**: Easy switching between front and back cameras.
+- 📷 **Smart Camera Selection**: Automatically selects the best rear camera (avoids ultra-wide/telephoto).
+- 🎯 **Session Management**: Prevents stale results with session-based tracking.
+- 🎨 **Customizable UI**: CSS-based styling with sensible defaults and CSS variables.
+- 📦 **TypeScript Support**: Full type definitions included out of the box.
+- 📳 **Haptic Feedback**: Standard [Web Vibration API](https://developer.mozilla.org/en-US/docs/Web/API/Vibration_API) support for successful scans (Android/Desktop).
+- 🔊 **Sound Feedback**: Optional audio cues on successful scans.
 
-## Supported Barcode Formats
+---
 
-- QR Code
-- EAN-13, EAN-8
-- UPC-A, UPC-E
-- Code 128, Code 39, Code 93
-- Codabar
-- ITF (Interleaved 2 of 5)
-- ISBN-10, ISBN-13
-- DataBar (GS1)
-- PDF417
-- And more (powered by ZBar)
+## 🏷️ Supported Barcode Formats
 
-## Installation
+- **2D Codes**: QR Code, PDF417
+- **Retail Codes**: EAN-13, EAN-8, UPC-A, UPC-E
+- **Industrial/Standard Codes**: Code 128, Code 39, Code 93, Codabar, ITF (Interleaved 2 of 5)
+- **Books**: ISBN-10, ISBN-13
+- **DataBar (GS1)**
+- *And more! (Powered by ZBar)*
+
+---
+
+## 📦 Installation
+
+Choose your preferred package manager:
 
 ```bash
+# npm
 npm install modern-barcode-scanner
-```
 
-or
-
-```bash
+# yarn
 yarn add modern-barcode-scanner
-```
 
-or
-
-```bash
+# pnpm
 pnpm add modern-barcode-scanner
 ```
 
-## Quick Start
+---
+
+## 🚀 Quick Start
+
+Here's a minimal example to get the scanner up and running in your React application:
 
 ```tsx
 import { useRef, useEffect } from 'react';
 import { BarcodeScanner, BarcodeScannerRef, ScanResult } from 'modern-barcode-scanner';
-// Styles are auto-imported, but you can also import manually:
+
+// Styles are auto-imported, but you can also import manually if needed:
 // import 'modern-barcode-scanner/styles.css';
 
 function App() {
   const scannerRef = useRef<BarcodeScannerRef>(null);
 
   const handleScan = (result: ScanResult) => {
-    console.log('Barcode type:', result.typeName);
-    console.log('Barcode data:', result.scanData);
+    console.log('📦 Barcode type:', result.typeName);
+    console.log('📄 Barcode data:', result.scanData);
     
-    // Scanner automatically stops after detection
-    // Call scannerRef.current?.start() to scan again
+    // Scanner automatically stops after detection.
+    // Call scannerRef.current?.start() to scan again!
   };
 
   const handleError = (error: Error) => {
-    console.error('Scanner error:', error.message);
+    console.error('❌ Scanner error:', error.message);
   };
 
   useEffect(() => {
@@ -82,52 +88,58 @@ function App() {
         ref={scannerRef}
         onScan={handleScan}
         onError={handleError}
+        themeColor="#4db8a8" // Customize the primary UI color!
       />
     </div>
   );
 }
 ```
 
-## API Reference
+---
 
-### BarcodeScanner Component
+## 📖 API Reference
+
+### `<BarcodeScanner />` Component
 
 #### Props
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `onScan` | `(result: ScanResult) => void` | **Required** | Callback fired when a barcode is detected |
-| `onError` | `(error: Error) => void` | - | Callback fired when an error occurs |
-| `onStateChange` | `(state: ScannerState) => void` | - | Callback fired when scanner state changes |
-| `scanInterval` | `number` | `100` | Time between scan attempts (ms) |
-| `enableVibration` | `boolean` | `true` | Enable haptic feedback on scan |
-| `vibrationDuration` | `number` | `200` | Vibration duration (ms) |
-| `enableSound` | `boolean` | `false` | Enable sound feedback on scan |
-| `initialFacingMode` | `'user' \| 'environment'` | `'environment'` | Initial camera |
-| `className` | `string` | - | Custom CSS class |
-| `style` | `React.CSSProperties` | - | Custom inline styles |
-| `showScanLine` | `boolean` | `true` | Show scanning animation |
-| `showCameraSwitch` | `boolean` | `true` | Show camera switch button |
-| `showTorchButton` | `boolean` | `true` | Show torch button |
+| `onScan` | `(result: ScanResult) => void` | **Required** | Callback fired when a barcode is detected. |
+| `onError` | `(error: Error) => void` | `undefined` | Callback fired when an error occurs. |
+| `onStateChange` | `(state: ScannerState) => void` | `undefined` | Callback fired when scanner state changes. |
+| `themeColor` | `string` | `'#4db8a8'` | Primary theme color for UI elements and scan line. |
+| `scanInterval` | `number` | `100` | Time between scan attempts (in ms). |
+| `enableVibration` | `boolean` | `true` | Enable haptic feedback on scan (uses `navigator.vibrate`). |
+| `vibrationDuration`| `number` | `200` | Vibration duration (in ms). |
+| `enableSound` | `boolean` | `false` | Enable sound feedback on scan. |
+| `initialFacingMode`| `'user' \| 'environment'` | `'environment'`| Initial camera to use. |
+| `showScanLine` | `boolean` | `true` | Show scanning animation line. |
+| `showCameraSwitch` | `boolean` | `true` | Show camera switch button. |
+| `showTorchButton` | `boolean` | `true` | Show torch button (if supported). |
+| `className` | `string` | `''` | Custom CSS class for the container. |
+| `style` | `React.CSSProperties` | `undefined` | Custom inline styles for the container. |
 
 #### Ref Methods
 
+Exposed via `useImperativeHandle` for direct control:
+
 ```tsx
 interface BarcodeScannerRef {
-  start: () => Promise<void>;      // Start scanning
-  stop: () => void;                // Stop scanning
-  switchCamera: () => Promise<void>; // Switch front/back camera
-  toggleTorch: () => Promise<void>;  // Toggle torch/flash
-  getState: () => ScannerState;    // Get current state
+  start: () => Promise<void>;        // Starts the camera and scanning
+  stop: () => void;                  // Stops the camera and scanning
+  switchCamera: () => Promise<void>; // Toggles between front and back camera
+  toggleTorch: () => Promise<void>;  // Toggles the torch/flash (if supported)
+  getState: () => ScannerState;      // Returns current state
 }
 ```
 
-### Types
+### TypeScript Types
 
 ```tsx
 interface ScanResult {
   typeName: string;  // e.g., 'QRCODE', 'EAN13', 'CODE128'
-  scanData: string;  // The decoded barcode data
+  scanData: string;  // The decoded barcode string
 }
 
 interface ScannerState {
@@ -137,11 +149,13 @@ interface ScannerState {
 }
 ```
 
-## Advanced Usage
+---
 
-### Using the Hook Directly
+## 🛠️ Advanced Usage
 
-For custom implementations, you can use the `useScanner` hook:
+### Using the `useScanner` Hook
+
+If you need complete control over the UI, you can use the internal hook directly:
 
 ```tsx
 import { useScanner } from 'modern-barcode-scanner';
@@ -156,22 +170,30 @@ function CustomScanner() {
     handleSwitchCamera,
     handleToggleTorch,
   } = useScanner({
-    onScan: (result) => console.log(result),
-    onError: (error) => console.error(error),
+    onScan: (result) => console.log('Scanned:', result),
+    onError: (error) => console.error('Error:', error),
+    enableVibration: true,
   });
 
   return (
     <div>
       <video ref={videoRef} autoPlay muted playsInline />
       <canvas ref={canvasRef} hidden />
-      <button onClick={handleScan}>Start</button>
-      <button onClick={handleStopScan}>Stop</button>
+      
+      <div className="controls">
+        <button onClick={handleScan}>▶️ Start</button>
+        <button onClick={handleStopScan}>⏹️ Stop</button>
+        <button onClick={handleSwitchCamera}>🔄 Switch</button>
+        {scannerState.isTorchOn ? '🔦 On' : '🔦 Off'}
+      </div>
     </div>
   );
 }
 ```
 
-### Utility Functions
+### Helper Utilities
+
+The library exports several useful utilities:
 
 ```tsx
 import { 
@@ -180,63 +202,88 @@ import {
   getMediaConstraints 
 } from 'modern-barcode-scanner';
 
-// Check if device is a phone/tablet
+// 📱 Check if device is a phone/tablet
 const isMobile = isPhone();
 
-// Get the best rear camera device ID
+// 📷 Get the optimal rear camera device ID (avoids ultra-wide lenses)
 const cameraId = await getBestRearCamera();
 
-// Get optimized media constraints
+// ⚙️ Get optimized media constraints based on facing mode
 const constraints = await getMediaConstraints('environment');
 ```
 
-## Styling
+---
 
-The component uses CSS classes prefixed with `mbs-` (Modern Barcode Scanner). You can override these styles:
+## 🎨 Styling
+
+The component uses CSS prefix `mbs-` (Modern Barcode Scanner) and supports native CSS variables for easy theming.
+
+### CSS Variables
+
+You can easily override the primary color globally or via the `themeColor` prop:
+```css
+:root {
+  --mbs-primary: #ff0055; /* Changes scan line and active icon colors */
+}
+```
+
+### Overriding Classes
 
 ```css
 /* Custom container styling */
 .mbs-container {
   border-radius: 1rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-/* Custom scan line color */
+/* Custom scan line */
 .mbs-scan-line {
-  background-color: #00ff00;
-  box-shadow: 0 0 15px 2px rgba(0, 255, 0, 0.8);
+  height: 3px;
+  box-shadow: 0 0 15px 3px var(--mbs-primary);
 }
 
 /* Custom control buttons */
 .mbs-control-btn {
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
 }
 ```
 
-## Browser Support
+---
 
-- Chrome/Edge 79+
-- Firefox 79+
-- Safari 14.1+
-- Chrome for Android
-- Safari on iOS 14.5+
+## 🌐 Browser Support
 
-**Note**: Camera access requires HTTPS in production.
+| Browser / OS | Version |
+|--------------|---------|
+| 🟢 Google Chrome | 79+ |
+| 🔵 Microsoft Edge | 79+ |
+| 🟠 Mozilla Firefox | 79+ |
+| 🧭 Safari (macOS) | 14.1+ |
+| 📱 Chrome for Android | Supported |
+| 🍎 Safari on iOS | 14.5+ |
 
-## Performance Optimizations
+> **⚠️ Note**: Camera access requires a secure context (**HTTPS**) in production environments!
 
-This library includes several optimizations:
+---
 
-1. **Web Worker Processing**: Barcode detection runs in a separate thread
-2. **Grayscale Conversion**: Uses bitwise operations for fast image processing
-3. **Frame Throttling**: Configurable scan interval to balance speed and CPU usage
-4. **Session Management**: Prevents processing of stale frames
-5. **Smart Downscaling**: Reduces resolution for faster processing without quality loss
-6. **Canvas Optimization**: Uses `willReadFrequently` and `desynchronized` hints
+## ⚡ Performance Optimizations
 
-## License
+This library is built for speed and reliability:
+1. **Web Worker Processing**: Barcode detection runs entirely off the main thread.
+2. **Grayscale Conversion**: Uses bitwise operations for incredibly fast image matrix processing.
+3. **Frame Throttling**: Configurable `scanInterval` perfectly balances detection speed with device battery/CPU usage.
+4. **Session Management**: Strictly prevents processing out-of-date or stale video frames.
+5. **Smart Downscaling**: Intelligently reduces image resolution for faster processing while maintaining read quality.
+6. **Canvas Optimizations**: Utilizes `willReadFrequently` and `desynchronized` rendering hints where supported.
+
+---
+
+## 📝 License
 
 MIT © [Sumit Sahoo](https://github.com/sumitsahoo)
 
-## Credits
+---
 
-- Barcode detection powered by [ZBar WASM](https://github.com/nickinchern/nickinchern-undecaf-zbar-wasm)
+## 🤝 Credits
+
+- Powerful barcode detection engine powered by [ZBar WASM](https://github.com/nickinchern/nickinchern-undecaf-zbar-wasm).

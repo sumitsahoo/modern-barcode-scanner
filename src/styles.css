@@ -5,137 +5,137 @@
 
 /* CSS Custom Properties - Light Mode (default) */
 :root {
-	--mbs-primary: #4db8a8;
-	--mbs-primary-dark: #3d9d8f;
-	--mbs-scan-color: #ef4444;
-	--mbs-bg: #ffffff;
-	--mbs-bg-secondary: #f8fafa;
-	--mbs-bg-card: rgba(255, 255, 255, 0.95);
-	--mbs-text: #2d5550;
-	--mbs-text-secondary: rgba(45, 85, 80, 0.7);
-	--mbs-control-bg: rgba(0, 0, 0, 0.5);
-	--mbs-control-hover: rgba(255, 255, 255, 0.2);
-	--mbs-border: rgba(77, 184, 168, 0.2);
+  --mbs-primary: #4db8a8;
+  --mbs-primary-dark: #3d9d8f;
+  --mbs-scan-color: #ef4444;
+  --mbs-bg: #ffffff;
+  --mbs-bg-secondary: #f8fafa;
+  --mbs-bg-card: rgba(255, 255, 255, 0.95);
+  --mbs-text: #2d5550;
+  --mbs-text-secondary: rgba(45, 85, 80, 0.7);
+  --mbs-control-bg: rgba(0, 0, 0, 0.5);
+  --mbs-control-hover: rgba(255, 255, 255, 0.2);
+  --mbs-border: rgba(77, 184, 168, 0.2);
 }
 
 /* CSS Custom Properties - Dark Mode */
 @media (prefers-color-scheme: dark) {
-	:root {
-		--mbs-bg: #0f1419;
-		--mbs-bg-secondary: #1a2229;
-		--mbs-bg-card: rgba(26, 34, 41, 0.95);
-		--mbs-text: #e8f4f2;
-		--mbs-text-secondary: rgba(232, 244, 242, 0.7);
-		--mbs-border: rgba(255, 255, 255, 0.1);
-	}
+  :root {
+    --mbs-bg: #0f1419;
+    --mbs-bg-secondary: #1a2229;
+    --mbs-bg-card: rgba(26, 34, 41, 0.95);
+    --mbs-text: #e8f4f2;
+    --mbs-text-secondary: rgba(232, 244, 242, 0.7);
+    --mbs-border: rgba(255, 255, 255, 0.1);
+  }
 }
 
 /* Container */
 .mbs-container {
-	position: absolute;
-	inset: 0;
-	width: 100%;
-	height: 100%;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	overflow: hidden;
-	background-color: var(--mbs-bg);
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  background-color: var(--mbs-bg);
 }
 
 /* Video container */
 .mbs-video-container {
-	position: absolute;
-	inset: 0;
-	display: flex;
-	justify-content: center;
-	align-items: center;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Placeholder icon */
 .mbs-placeholder-icon {
-	position: absolute;
-	z-index: 10;
-	width: 40vw;
-	height: 40vw;
-	max-width: 200px;
-	max-height: 200px;
-	color: var(--mbs-primary);
-	opacity: 0.4;
-	filter: drop-shadow(0 0 20px rgba(77, 184, 168, 0.3));
+  position: absolute;
+  z-index: 10;
+  width: 40vw;
+  height: 40vw;
+  max-width: 200px;
+  max-height: 200px;
+  color: var(--mbs-primary);
+  opacity: 0.4;
+  filter: drop-shadow(0 0 20px rgba(77, 184, 168, 0.3));
 }
 
 @media (min-width: 768px) {
-	.mbs-placeholder-icon {
-		width: 30vw;
-		height: 30vw;
-	}
+  .mbs-placeholder-icon {
+    width: 30vw;
+    height: 30vw;
+  }
 }
 
 /* Video element */
 .mbs-video {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	position: relative;
-	z-index: 20;
-	filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.5));
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: relative;
+  z-index: 20;
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.5));
 }
 
 /* Controls container */
 .mbs-controls {
-	position: absolute;
-	bottom: 2rem;
-	left: 50%;
-	transform: translateX(-50%);
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	gap: 1rem;
-	z-index: 30;
-	background-color: var(--mbs-control-bg);
-	border: 1px solid rgba(255, 255, 255, 0.1);
-	border-radius: 9999px;
-	padding: 0.5rem 1rem;
-	backdrop-filter: blur(16px);
-	-webkit-backdrop-filter: blur(16px);
-	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  z-index: 30;
+  background-color: var(--mbs-control-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  padding: 0.5rem 1rem;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 /* Control button */
 .mbs-control-btn {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	width: 2.5rem;
-	height: 2.5rem;
-	border-radius: 50%;
-	border: none;
-	background-color: rgba(255, 255, 255, 0.1);
-	color: white;
-	cursor: pointer;
-	transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .mbs-control-btn:hover {
-	background-color: rgba(255, 255, 255, 0.2);
-	transform: scale(1.05);
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
 }
 
 .mbs-control-btn:active {
-	transform: scale(0.9);
+  transform: scale(0.9);
 }
 
 .mbs-control-btn:disabled {
-	opacity: 0.4;
-	cursor: not-allowed;
-	transform: none;
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* Icon */
 .mbs-icon {
-	width: 1.5rem;
-	height: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
 }
 
 /* ============================================
@@ -144,96 +144,96 @@
 
 /* Scan line container - the moving element */
 .mbs-scan-line-container {
-	position: absolute;
-	width: 80%;
-	left: 10%;
-	top: 20%;
-	z-index: 40;
-	pointer-events: none;
-	animation: mbs-scan 2.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-	will-change: transform;
-	transform: translateZ(0);
-	backface-visibility: hidden;
+  position: absolute;
+  width: 80%;
+  left: 10%;
+  top: 20%;
+  z-index: 40;
+  pointer-events: none;
+  animation: mbs-scan 2.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 /* The main scan line */
 .mbs-scan-line {
-	width: 100%;
-	height: 2px;
-	background-color: var(--mbs-scan-color);
-	box-shadow: 0 0 15px 2px rgba(239, 68, 68, 0.8);
+  width: 100%;
+  height: 2px;
+  background-color: var(--mbs-scan-color);
+  box-shadow: 0 0 15px 2px rgba(239, 68, 68, 0.8);
 }
 
 /* Trail effect below the scan line (follows as it moves down) */
 .mbs-scan-line-trail-down {
-	position: absolute;
-	bottom: 0;
-	width: 100%;
-	height: 6rem;
-	background: linear-gradient(to bottom, transparent, var(--mbs-scan-color));
-	animation: mbs-trail-down 2.5s linear infinite;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 6rem;
+  background: linear-gradient(to bottom, transparent, var(--mbs-scan-color));
+  animation: mbs-trail-down 2.5s linear infinite;
 }
 
 /* Trail effect above the scan line (follows as it moves up) */
 .mbs-scan-line-trail-up {
-	position: absolute;
-	top: 0;
-	width: 100%;
-	height: 6rem;
-	background: linear-gradient(to top, transparent, var(--mbs-scan-color));
-	animation: mbs-trail-up 2.5s linear infinite;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 6rem;
+  background: linear-gradient(to top, transparent, var(--mbs-scan-color));
+  animation: mbs-trail-up 2.5s linear infinite;
 }
 
 /* Scan animation keyframes - matches original with 45vh movement */
 @keyframes mbs-scan {
-	0% {
-		transform: translateY(0);
-	}
-	50% {
-		transform: translateY(45vh);
-	}
-	100% {
-		transform: translateY(0);
-	}
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(45vh);
+  }
+  100% {
+    transform: translateY(0);
+  }
 }
 
 /* Trail down animation - visible during downward movement */
 @keyframes mbs-trail-down {
-	0%,
-	100% {
-		opacity: 0;
-	}
-	15% {
-		opacity: 0.5;
-	}
-	35% {
-		opacity: 0.5;
-	}
-	50% {
-		opacity: 0;
-	}
+  0%,
+  100% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.5;
+  }
+  35% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 /* Trail up animation - visible during upward movement */
 @keyframes mbs-trail-up {
-	0%,
-	100% {
-		opacity: 0;
-	}
-	50% {
-		opacity: 0;
-	}
-	65% {
-		opacity: 0.5;
-	}
-	85% {
-		opacity: 0.5;
-	}
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0;
+  }
+  65% {
+    opacity: 0.5;
+  }
+  85% {
+    opacity: 0.5;
+  }
 }
 
 /* Dark theme support */
 @media (prefers-color-scheme: dark) {
-	.mbs-container {
-		background-color: #000;
-	}
+  .mbs-container {
+    background-color: #000;
+  }
 }

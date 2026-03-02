@@ -40,92 +40,108 @@ import ScannerControls from "./ScannerControls";
  * ```
  */
 const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
-	(
-		{
-			onScan,
-			onError,
-			onStateChange,
-			scanInterval,
-			enableVibration = true,
-			vibrationDuration,
-			enableSound = false,
-			initialFacingMode = "environment",
-			className = "",
-			showScanLine = true,
-			showCameraSwitch = true,
-			showTorchButton = true,
-			style,
-			themeColor = SCANNER_THEME.primary,
-		},
-		ref,
-	) => {
-		const { scannerState, videoRef, canvasRef, handleScan, handleStopScan, handleSwitchCamera, handleToggleTorch } =
-			useScanner({
-				onScan,
-				onError,
-				onStateChange,
-				scanInterval,
-				enableVibration,
-				vibrationDuration,
-				enableSound,
-				initialFacingMode,
-			});
+  (
+    {
+      onScan,
+      onError,
+      onStateChange,
+      scanInterval,
+      enableVibration = true,
+      vibrationDuration,
+      enableSound = false,
+      initialFacingMode = "environment",
+      className = "",
+      showScanLine = true,
+      showCameraSwitch = true,
+      showTorchButton = true,
+      style,
+      themeColor = SCANNER_THEME.primary,
+    },
+    ref,
+  ) => {
+    const {
+      scannerState,
+      videoRef,
+      canvasRef,
+      handleScan,
+      handleStopScan,
+      handleSwitchCamera,
+      handleToggleTorch,
+    } = useScanner({
+      onScan,
+      onError,
+      onStateChange,
+      scanInterval,
+      enableVibration,
+      vibrationDuration,
+      enableSound,
+      initialFacingMode,
+    });
 
-		const { isScanning, facingMode, isTorchOn } = scannerState;
-		const isPhoneDevice = isPhone();
+    const { isScanning, facingMode, isTorchOn } = scannerState;
+    const isPhoneDevice = isPhone();
 
-		// Expose imperative methods via ref
-		useImperativeHandle(
-			ref,
-			() => ({
-				start: handleScan,
-				stop: handleStopScan,
-				switchCamera: handleSwitchCamera,
-				toggleTorch: handleToggleTorch,
-				getState: (): ScannerState => scannerState,
-			}),
-			[handleScan, handleStopScan, handleSwitchCamera, handleToggleTorch, scannerState],
-		);
+    // Expose imperative methods via ref
+    useImperativeHandle(
+      ref,
+      () => ({
+        start: handleScan,
+        stop: handleStopScan,
+        switchCamera: handleSwitchCamera,
+        toggleTorch: handleToggleTorch,
+        getState: (): ScannerState => scannerState,
+      }),
+      [handleScan, handleStopScan, handleSwitchCamera, handleToggleTorch, scannerState],
+    );
 
-		// Auto-cleanup on unmount
-		useEffect(() => {
-			return () => {
-				handleStopScan();
-			};
-		}, [handleStopScan]);
+    // Auto-cleanup on unmount
+    useEffect(() => {
+      return () => {
+        handleStopScan();
+      };
+    }, [handleStopScan]);
 
-		// Combine user styles with the custom theme color CSS variable
-		const containerStyle = {
-			...style,
-			"--mbs-primary": themeColor,
-		} as React.CSSProperties;
+    // Combine user styles with the custom theme color CSS variable
+    const containerStyle = {
+      ...style,
+      "--mbs-primary": themeColor,
+    } as React.CSSProperties;
 
-		return (
-			<div className={`mbs-container ${className}`} style={containerStyle}>
-				{/* Camera Feed */}
-				<div className="mbs-video-container">
-					<IconCameraPlaceholder className="mbs-placeholder-icon" />
-					<video title="Barcode Scanner" ref={videoRef} autoPlay muted playsInline className="mbs-video" />
-				</div>
+    return (
+      <div className={`mbs-container ${className}`} style={containerStyle}>
+        {/* Camera Feed */}
+        <div className="mbs-video-container">
+          <IconCameraPlaceholder className="mbs-placeholder-icon" />
+          <video
+            title="Barcode Scanner"
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            className="mbs-video"
+          />
+        </div>
 
-				{/* Hidden canvas for image processing */}
-				<canvas ref={canvasRef} hidden />
+        {/* Hidden canvas for image processing */}
+        <canvas ref={canvasRef} hidden />
 
-				{/* Scanning Animation Line */}
-				<ScanLine visible={isScanning && showScanLine} />
+        {/* Scanning Animation Line */}
+        <ScanLine visible={isScanning && showScanLine} />
 
-				{/* Camera Controls */}
-				<ScannerControls
-					isScanning={isScanning}
-					isTorchOn={isTorchOn}
-					shouldShowRotateButton={showCameraSwitch && isScanning && isPhoneDevice}
-					shouldShowTorchButton={showTorchButton && isScanning && isPhoneDevice && facingMode === "environment"}
-					onSwitchCamera={handleSwitchCamera}
-					onToggleTorch={handleToggleTorch}
-				/>
-			</div>
-		);
-	},
+        {/* Camera Controls */}
+        <ScannerControls
+          isScanning={isScanning}
+          isTorchOn={isTorchOn}
+          shouldShowRotateButton={showCameraSwitch && isScanning && isPhoneDevice}
+          shouldShowTorchButton={
+            showTorchButton && isScanning && isPhoneDevice && facingMode === "environment"
+          }
+          onSwitchCamera={handleSwitchCamera}
+          onToggleTorch={handleToggleTorch}
+        />
+      </div>
+    );
+  },
 );
 
 BarcodeScanner.displayName = "BarcodeScanner";
