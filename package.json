@@ -1,6 +1,6 @@
 {
   "name": "modern-barcode-scanner",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A high-performance barcode scanner React component with optimized detection, torch control, and camera switching",
   "author": "Sumit Sahoo",
   "license": "MIT",
