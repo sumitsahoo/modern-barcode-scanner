@@ -54,6 +54,7 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
 			showCameraSwitch = true,
 			showTorchButton = true,
 			style,
+			themeColor = "#4db8a8",
 		},
 		ref,
 	) => {
@@ -92,8 +93,14 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
 			};
 		}, [handleStopScan]);
 
+		// Combine user styles with the custom theme color CSS variable
+		const containerStyle = {
+			...style,
+			"--mbs-primary": themeColor,
+		} as React.CSSProperties;
+
 		return (
-			<div className={`mbs-container ${className}`} style={style}>
+			<div className={`mbs-container ${className}`} style={containerStyle}>
 				{/* Camera Feed */}
 				<div className="mbs-video-container">
 					<IconCameraPlaceholder className="mbs-placeholder-icon" />

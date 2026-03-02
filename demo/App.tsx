@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { BarcodeScanner, type BarcodeScannerRef, type ScanResult, type ScannerState } from "../src";
 
 /**
@@ -149,11 +149,74 @@ const styles = {
 	},
 };
 
+const getStyles = (themeColor: string) => ({
+	...styles,
+	scanButtonStart: {
+		...styles.scanButtonStart,
+		background: `linear-gradient(135deg, ${themeColor} 0%, ${themeColor}dd 100%)`,
+		boxShadow: `0 8px 32px ${themeColor}66`,
+	},
+	checkIcon: {
+		...styles.checkIcon,
+		color: themeColor,
+	},
+	dialogIcon: {
+		...styles.dialogIcon,
+		background: `${themeColor}1a`, // 10% opacity roughly
+	},
+	btnPrimary: {
+		...styles.btnPrimary,
+		background: `linear-gradient(135deg, ${themeColor} 0%, ${themeColor}dd 100%)`,
+	},
+	btnScanAgain: {
+		...styles.btnScanAgain,
+		color: themeColor,
+		border: `1px solid ${themeColor}`,
+	},
+	colorPickerContainer: {
+		position: "absolute" as const,
+		top: "1rem",
+		right: "1rem",
+		zIndex: 50,
+		background: "rgba(255, 255, 255, 0.9)",
+		padding: "0.5rem",
+		borderRadius: "0.5rem",
+		display: "flex",
+		alignItems: "center",
+		gap: "0.5rem",
+		boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+		backdropFilter: "blur(8px)",
+	},
+	colorPickerLabel: {
+		fontSize: "0.875rem",
+		fontWeight: 500,
+		color: "#2d5550",
+	},
+	colorInput: {
+		width: "2rem",
+		height: "2rem",
+		padding: 0,
+		border: "none",
+		borderRadius: "0.25rem",
+		cursor: "pointer",
+	}
+});
+
 function App() {
 	const scannerRef = useRef<BarcodeScannerRef>(null);
 	const [result, setResult] = useState<ScanResult | null>(null);
 	const [state, setState] = useState<ScannerState | null>(null);
 	const [copied, setCopied] = useState(false);
+	const [themeColor, setThemeColor] = useState("#4db8a8");
+
+	const dynamicStyles = getStyles(themeColor);
+
+	useEffect(() => {
+		const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+		if (metaThemeColor) {
+			metaThemeColor.setAttribute('content', themeColor);
+		}
+	}, [themeColor]);
 
 	const handleScan = useCallback((scanResult: ScanResult) => {
 		setResult(scanResult);
@@ -193,7 +256,20 @@ function App() {
 	const isScanning = state?.isScanning ?? false;
 
 	return (
-		<div style={styles.app}>
+		<div style={dynamicStyles.app}>
+			{/* Color Picker Control */}
+			<div style={dynamicStyles.colorPickerContainer}>
+				<label htmlFor="theme-color" style={dynamicStyles.colorPickerLabel}>Theme</label>
+				<input
+					id="theme-color"
+					type="color"
+					value={themeColor}
+					onChange={(e) => setThemeColor(e.target.value)}
+					style={dynamicStyles.colorInput}
+					title="Change Theme Color"
+				/>
+			</div>
+
 			{/* Scanner - takes full screen */}
 			<BarcodeScanner
 				ref={scannerRef}
@@ -201,21 +277,22 @@ function App() {
 				onError={handleError}
 				onStateChange={handleStateChange}
 				enableVibration={true}
+				themeColor={themeColor}
 			/>
 
 			{/* Controls - positioned at bottom center */}
 			{!result && (
 				<div
 					style={{
-						...styles.controlsContainer,
-						...(isScanning ? styles.controlsContainerScanning : {}),
+						...dynamicStyles.controlsContainer,
+						...(isScanning ? dynamicStyles.controlsContainerScanning : {}),
 					}}
 				>
 					<button
 						type="button"
 						style={{
-							...styles.scanButton,
-							...(isScanning ? styles.scanButtonStop : styles.scanButtonStart),
+							...dynamicStyles.scanButton,
+							...(isScanning ? dynamicStyles.scanButtonStop : dynamicStyles.scanButtonStart),
 						}}
 						onClick={isScanning ? stopScanning : startScanning}
 						aria-label={isScanning ? "Stop scanning" : "Start scanning"}
@@ -258,10 +335,10 @@ function App() {
 
 			{/* Result Dialog - shown after successful scan */}
 			{result && (
-				<div style={styles.backdrop}>
-					<div style={styles.dialog}>
-						<div style={styles.dialogIcon}>
-							<svg viewBox="0 0 24 24" fill="none" style={styles.checkIcon}>
+				<div style={dynamicStyles.backdrop}>
+					<div style={dynamicStyles.dialog}>
+						<div style={dynamicStyles.dialogIcon}>
+							<svg viewBox="0 0 24 24" fill="none" style={dynamicStyles.checkIcon}>
 								<title>Success</title>
 								<path
 									d="M5 13l4 4L19 7"
@@ -272,19 +349,19 @@ function App() {
 								/>
 							</svg>
 						</div>
-						<h2 style={styles.dialogTitle}>{result.typeName || "Barcode Detected"}</h2>
-						<div style={styles.dialogData}>{result.scanData}</div>
-						<div style={styles.dialogActions}>
+						<h2 style={dynamicStyles.dialogTitle}>{result.typeName || "Barcode Detected"}</h2>
+						<div style={dynamicStyles.dialogData}>{result.scanData}</div>
+						<div style={dynamicStyles.dialogActions}>
 							<button
 								type="button"
-								style={{ ...styles.btn, ...styles.btnCopy }}
+								style={{ ...dynamicStyles.btn, ...dynamicStyles.btnCopy }}
 								onClick={copyToClipboard}
 							>
 								{copied ? "✓ Copied!" : "Copy"}
 							</button>
 							<button
 								type="button"
-								style={{ ...styles.btn, ...styles.btnPrimary }}
+								style={{ ...dynamicStyles.btn, ...dynamicStyles.btnPrimary }}
 								onClick={dismissResult}
 							>
 								Close
@@ -292,7 +369,7 @@ function App() {
 						</div>
 						<button
 							type="button"
-							style={{ ...styles.btn, ...styles.btnScanAgain }}
+							style={{ ...dynamicStyles.btn, ...dynamicStyles.btnScanAgain }}
 							onClick={startScanning}
 						>
 							Scan Again

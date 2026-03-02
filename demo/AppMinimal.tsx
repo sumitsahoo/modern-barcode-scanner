@@ -8,6 +8,7 @@ function AppMinimal() {
 	const scannerRef = useRef<BarcodeScannerRef>(null);
 	const [result, setResult] = useState<string | null>(null);
 	const [isScanning, setIsScanning] = useState(false);
+	const PRIMARY_COLOR = "#4db8a8";
 
 	const handleScan = useCallback((scanResult: ScanResult) => {
 		setResult(`${scanResult.typeName}: ${scanResult.scanData}`);
@@ -33,7 +34,13 @@ function AppMinimal() {
 
 	return (
 		<div style={{ width: "100vw", height: "100dvh", position: "relative" }}>
-			<BarcodeScanner ref={scannerRef} onScan={handleScan} onError={handleError} onStateChange={handleStateChange} />
+			<BarcodeScanner
+				ref={scannerRef}
+				onScan={handleScan}
+				onError={handleError}
+				onStateChange={handleStateChange}
+				themeColor={PRIMARY_COLOR}
+			/>
 
 			{/* Simple controls */}
 			<div
@@ -57,7 +64,7 @@ function AppMinimal() {
 						fontSize: 16,
 						borderRadius: 8,
 						border: "none",
-						background: isScanning ? "#ef4444" : "#4db8a8",
+						background: isScanning ? "#ef4444" : PRIMARY_COLOR,
 						color: "white",
 						cursor: "pointer",
 					}}
