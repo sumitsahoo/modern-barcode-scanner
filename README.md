@@ -2,8 +2,12 @@
   <h1>📷 Modern Barcode Scanner</h1>
   <p>A high-performance barcode scanner React component with optimized detection, camera switching, torch control, and automatic phone detection.</p>
 
-  [![npm version](https://badge.fury.io/js/modern-barcode-scanner.svg)](https://www.npmjs.com/package/modern-barcode-scanner)
+  ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/sumitsahoo/modern-barcode-scanner/publish.yml)
+  ![NPM Version](https://img.shields.io/npm/v/modern-barcode-scanner)
+  ![NPM Downloads](https://img.shields.io/npm/dw/modern-barcode-scanner)
+  [![Socket Badge](https://badge.socket.dev/npm/package/modern-barcode-scanner)](https://badge.socket.dev/npm/package/modern-barcode-scanner)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  
 </div>
 
 ---
