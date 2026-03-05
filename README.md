@@ -4,7 +4,7 @@
 
   ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/sumitsahoo/modern-barcode-scanner/publish.yml)
   ![NPM Version](https://img.shields.io/npm/v/modern-barcode-scanner)
-  ![NPM Downloads](https://img.shields.io/npm/dw/modern-barcode-scanner)
+  ![NPM Downloads](https://img.shields.io/npm/d18m/modern-barcode-scanner)
   [![Socket Badge](https://badge.socket.dev/npm/package/modern-barcode-scanner)](https://badge.socket.dev/npm/package/modern-barcode-scanner)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   
