@@ -317,7 +317,7 @@ npm run dev
 
 ### Demo
 
-The `demo/` app intentionally consumes the library exactly the way a published consumer does — importing it by package name (`modern-barcode-scanner`) and stylesheet (`modern-barcode-scanner/styles.css`) rather than reaching into `src/`. Aliases in `demo/vite.config.ts` map those public entry points to the local source so the demo stays live-reloading during development.
+The `demo/` app consumes the library the same way a published consumer does — importing it by package name (`modern-barcode-scanner`) and stylesheet (`modern-barcode-scanner/styles.css`) against its public API. Aliases in `demo/vite.config.ts` resolve those entry points to the local build during development, keeping the demo live-reloading while validating the real package surface.
 
 ### Testing
 
