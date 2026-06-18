@@ -2,12 +2,12 @@
   <h1>📷 Modern Barcode Scanner</h1>
   <p>A high-performance barcode scanner React component with optimized detection, camera switching, torch control, and automatic phone detection.</p>
 
-  ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/sumitsahoo/modern-barcode-scanner/publish.yml)
-  ![NPM Version](https://img.shields.io/npm/v/modern-barcode-scanner)
-  ![NPM Downloads](https://img.shields.io/npm/dw/modern-barcode-scanner)
-  [![Socket Badge](https://badge.socket.dev/npm/package/modern-barcode-scanner)](https://badge.socket.dev/npm/package/modern-barcode-scanner)
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/sumitsahoo/modern-barcode-scanner/publish.yml)
+![NPM Version](https://img.shields.io/npm/v/modern-barcode-scanner)
+![NPM Downloads](https://img.shields.io/npm/d18m/modern-barcode-scanner)
+[![Socket Badge](https://badge.socket.dev/npm/package/modern-barcode-scanner)](https://badge.socket.dev/npm/package/modern-barcode-scanner)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 </div>
 
 ---
@@ -34,7 +34,7 @@
 - **Industrial/Standard Codes**: Code 128, Code 39, Code 93, Codabar, ITF (Interleaved 2 of 5)
 - **Books**: ISBN-10, ISBN-13
 - **DataBar (GS1)**
-- *And more! (Powered by ZBar)*
+- _And more! (Powered by ZBar)_
 
 ---
 
@@ -60,25 +60,27 @@ pnpm add modern-barcode-scanner
 Here's a minimal example to get the scanner up and running in your React application:
 
 ```tsx
-import { useRef, useEffect } from 'react';
-import { BarcodeScanner, BarcodeScannerRef, ScanResult } from 'modern-barcode-scanner';
+import { useRef, useEffect } from "react";
+import { BarcodeScanner, BarcodeScannerRef, ScanResult } from "modern-barcode-scanner";
 
-// Styles are auto-imported, but you can also import manually if needed:
-// import 'modern-barcode-scanner/styles.css';
+// Import the stylesheet once, anywhere in your app. The CSS ships as a separate
+// file (so you can override the design tokens), so it is NOT injected
+// automatically — this import is required for the scanner to look right.
+import "modern-barcode-scanner/styles.css";
 
 function App() {
   const scannerRef = useRef<BarcodeScannerRef>(null);
 
   const handleScan = (result: ScanResult) => {
-    console.log('📦 Barcode type:', result.typeName);
-    console.log('📄 Barcode data:', result.scanData);
-    
+    console.log("📦 Barcode type:", result.typeName);
+    console.log("📄 Barcode data:", result.scanData);
+
     // Scanner automatically stops after detection.
     // Call scannerRef.current?.start() to scan again!
   };
 
   const handleError = (error: Error) => {
-    console.error('❌ Scanner error:', error.message);
+    console.error("❌ Scanner error:", error.message);
   };
 
   useEffect(() => {
@@ -87,32 +89,25 @@ function App() {
   }, []);
 
   return (
-    <div style={{ width: '100vw', height: '100vh' }}>
+    <div style={{ width: "100vw", height: "100vh" }}>
       <BarcodeScanner
         ref={scannerRef}
         onScan={handleScan}
         onError={handleError}
-        themeColor="#4db8a8" // Customize the primary UI color!
+        themeColor="#2563EB" // Customize the primary UI color!
       />
     </div>
   );
 }
 ```
 
-### WebAssembly (WASM) Configuration
+### Zero bundler configuration
 
-Under the hood, this library uses `@undecaf/zbar-wasm` which relies on WebAssembly. Depending on your bundler, you may need to explicitly exclude it from dependency optimization or configure it to serve `.wasm` files correctly.
+Under the hood, this library uses `@undecaf/zbar-wasm` for detection, running inside a Web Worker. Both the **worker** and its **WebAssembly binary are inlined directly into the bundle** — the worker as a `Blob` and the `.wasm` as embedded data.
 
-**Vite Example (`vite.config.ts`):**
+This means you do **not** need any special bundler setup: no `optimizeDeps` exclusions, no copying a worker file out of `node_modules`, and no rules to serve `.wasm` assets. Just install, import, and go — it works the same across Vite, webpack, Next.js, and other bundlers.
 
-```typescript
-export default defineConfig({
-  // ... other config
-  optimizeDeps: {
-    exclude: ['@undecaf/zbar-wasm']
-  }
-});
-```
+> The trade-off is a larger main bundle (the WASM binary is embedded), in exchange for it working out of the box in any consumer with no setup.
 
 ---
 
@@ -122,22 +117,22 @@ export default defineConfig({
 
 #### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `onScan` | `(result: ScanResult) => void` | **Required** | Callback fired when a barcode is detected. |
-| `onError` | `(error: Error) => void` | `undefined` | Callback fired when an error occurs. |
-| `onStateChange` | `(state: ScannerState) => void` | `undefined` | Callback fired when scanner state changes. |
-| `themeColor` | `string` | `'#4db8a8'` | Primary theme color for UI elements and scan line. |
-| `scanInterval` | `number` | `100` | Time between scan attempts (in ms). |
-| `enableVibration` | `boolean` | `true` | Enable haptic feedback on scan (uses `navigator.vibrate`). |
-| `vibrationDuration`| `number` | `200` | Vibration duration (in ms). |
-| `enableSound` | `boolean` | `false` | Enable sound feedback on scan. |
-| `initialFacingMode`| `'user' \| 'environment'` | `'environment'`| Initial camera to use. |
-| `showScanLine` | `boolean` | `true` | Show scanning animation line. |
-| `showCameraSwitch` | `boolean` | `true` | Show camera switch button. |
-| `showTorchButton` | `boolean` | `true` | Show torch button (if supported). |
-| `className` | `string` | `''` | Custom CSS class for the container. |
-| `style` | `React.CSSProperties` | `undefined` | Custom inline styles for the container. |
+| Prop                | Type                            | Default         | Description                                                |
+| ------------------- | ------------------------------- | --------------- | ---------------------------------------------------------- |
+| `onScan`            | `(result: ScanResult) => void`  | **Required**    | Callback fired when a barcode is detected.                 |
+| `onError`           | `(error: Error) => void`        | `undefined`     | Callback fired when an error occurs.                       |
+| `onStateChange`     | `(state: ScannerState) => void` | `undefined`     | Callback fired when scanner state changes.                 |
+| `themeColor`        | `string`                        | `'#2563EB'`     | Primary theme color for UI elements and scan line.         |
+| `scanInterval`      | `number`                        | `100`           | Time between scan attempts (in ms).                        |
+| `enableVibration`   | `boolean`                       | `true`          | Enable haptic feedback on scan (uses `navigator.vibrate`). |
+| `vibrationDuration` | `number`                        | `200`           | Vibration duration (in ms).                                |
+| `enableSound`       | `boolean`                       | `false`         | Enable sound feedback on scan.                             |
+| `initialFacingMode` | `'user' \| 'environment'`       | `'environment'` | Initial camera to use.                                     |
+| `showScanLine`      | `boolean`                       | `true`          | Show scanning animation line.                              |
+| `showCameraSwitch`  | `boolean`                       | `true`          | Show camera switch button.                                 |
+| `showTorchButton`   | `boolean`                       | `true`          | Show torch button (if supported).                          |
+| `className`         | `string`                        | `''`            | Custom CSS class for the container.                        |
+| `style`             | `React.CSSProperties`           | `undefined`     | Custom inline styles for the container.                    |
 
 #### Ref Methods
 
@@ -145,11 +140,11 @@ Exposed via `useImperativeHandle` for direct control:
 
 ```tsx
 interface BarcodeScannerRef {
-  start: () => Promise<void>;        // Starts the camera and scanning
-  stop: () => void;                  // Stops the camera and scanning
+  start: () => Promise<void>; // Starts the camera and scanning
+  stop: () => void; // Stops the camera and scanning
   switchCamera: () => Promise<void>; // Toggles between front and back camera
-  toggleTorch: () => Promise<void>;  // Toggles the torch/flash (if supported)
-  getState: () => ScannerState;      // Returns current state
+  toggleTorch: () => Promise<void>; // Toggles the torch/flash (if supported)
+  getState: () => ScannerState; // Returns current state
 }
 ```
 
@@ -157,13 +152,13 @@ interface BarcodeScannerRef {
 
 ```tsx
 interface ScanResult {
-  typeName: string;  // e.g., 'QRCODE', 'EAN13', 'CODE128'
-  scanData: string;  // The decoded barcode string
+  typeName: string; // e.g., 'QRCODE', 'EAN13', 'CODE128'
+  scanData: string; // The decoded barcode string
 }
 
 interface ScannerState {
   isScanning: boolean;
-  facingMode: 'user' | 'environment';
+  facingMode: "user" | "environment";
   isTorchOn: boolean;
 }
 ```
@@ -177,7 +172,7 @@ interface ScannerState {
 If you need complete control over the UI, you can use the internal hook directly:
 
 ```tsx
-import { useScanner } from 'modern-barcode-scanner';
+import { useScanner } from "modern-barcode-scanner";
 
 function CustomScanner() {
   const {
@@ -189,8 +184,8 @@ function CustomScanner() {
     handleSwitchCamera,
     handleToggleTorch,
   } = useScanner({
-    onScan: (result) => console.log('Scanned:', result),
-    onError: (error) => console.error('Error:', error),
+    onScan: (result) => console.log("Scanned:", result),
+    onError: (error) => console.error("Error:", error),
     enableVibration: true,
   });
 
@@ -198,12 +193,12 @@ function CustomScanner() {
     <div>
       <video ref={videoRef} autoPlay muted playsInline />
       <canvas ref={canvasRef} hidden />
-      
+
       <div className="controls">
         <button onClick={handleScan}>▶️ Start</button>
         <button onClick={handleStopScan}>⏹️ Stop</button>
         <button onClick={handleSwitchCamera}>🔄 Switch</button>
-        {scannerState.isTorchOn ? '🔦 On' : '🔦 Off'}
+        {scannerState.isTorchOn ? "🔦 On" : "🔦 Off"}
       </div>
     </div>
   );
@@ -215,11 +210,7 @@ function CustomScanner() {
 The library exports several useful utilities:
 
 ```tsx
-import { 
-  isPhone, 
-  getBestRearCamera, 
-  getMediaConstraints 
-} from 'modern-barcode-scanner';
+import { isPhone, getBestRearCamera, getMediaConstraints } from "modern-barcode-scanner";
 
 // 📱 Check if device is a phone/tablet
 const isMobile = isPhone();
@@ -228,7 +219,7 @@ const isMobile = isPhone();
 const cameraId = await getBestRearCamera();
 
 // ⚙️ Get optimized media constraints based on facing mode
-const constraints = await getMediaConstraints('environment');
+const constraints = await getMediaConstraints("environment");
 ```
 
 ---
@@ -240,6 +231,7 @@ The component uses CSS prefix `mbs-` (Modern Barcode Scanner) and supports nativ
 ### CSS Variables
 
 You can easily override the primary color globally or via the `themeColor` prop:
+
 ```css
 :root {
   --mbs-primary: #ff0055; /* Changes scan line and active icon colors */
@@ -252,7 +244,7 @@ You can easily override the primary color globally or via the `themeColor` prop:
 /* Custom container styling */
 .mbs-container {
   border-radius: 1rem;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Custom scan line */
@@ -272,14 +264,14 @@ You can easily override the primary color globally or via the `themeColor` prop:
 
 ## 🌐 Browser Support
 
-| Browser / OS | Version |
-|--------------|---------|
-| 🟢 Google Chrome | 79+ |
-| 🔵 Microsoft Edge | 79+ |
-| 🟠 Mozilla Firefox | 79+ |
-| 🧭 Safari (macOS) | 14.1+ |
+| Browser / OS          | Version   |
+| --------------------- | --------- |
+| 🟢 Google Chrome      | 79+       |
+| 🔵 Microsoft Edge     | 79+       |
+| 🟠 Mozilla Firefox    | 79+       |
+| 🧭 Safari (macOS)     | 14.1+     |
 | 📱 Chrome for Android | Supported |
-| 🍎 Safari on iOS | 14.5+ |
+| 🍎 Safari on iOS      | 14.5+     |
 
 > **⚠️ Note**: Camera access requires a secure context (**HTTPS**) in production environments!
 
@@ -288,12 +280,48 @@ You can easily override the primary color globally or via the `themeColor` prop:
 ## ⚡ Performance Optimizations
 
 This library is built for speed and reliability:
+
 1. **Web Worker Processing**: Barcode detection runs entirely off the main thread.
 2. **Grayscale Conversion**: Uses bitwise operations for incredibly fast image matrix processing.
 3. **Frame Throttling**: Configurable `scanInterval` perfectly balances detection speed with device battery/CPU usage.
 4. **Session Management**: Strictly prevents processing out-of-date or stale video frames.
 5. **Smart Downscaling**: Intelligently reduces image resolution for faster processing while maintaining read quality.
 6. **Canvas Optimizations**: Utilizes `willReadFrequently` and `desynchronized` rendering hints where supported.
+
+---
+
+## 🧑‍💻 Development
+
+This project uses [**Vite+**](https://viteplus.dev) (`vp`) as its unified toolchain — one tool for building, testing, linting, and formatting (it bundles Vite, Vitest, Oxlint, and Oxfmt). The npm scripts invoke the locally-installed `vp` binary, so `npm install` is all you need to get going.
+
+```bash
+# Install dependencies (includes Vite+)
+npm install
+
+# Start the live demo app at http://localhost:8080
+npm run dev
+```
+
+### Scripts
+
+| Script              | Description                                                       |
+| ------------------- | ----------------------------------------------------------------- |
+| `npm run dev`       | Run the demo app with hot-module reload.                          |
+| `npm run build`     | Build the library (ESM + CJS) and emit type declarations (`tsc`). |
+| `npm run preview`   | Preview a production build of the demo.                           |
+| `npm test`          | Run the test suite once (Vitest + jsdom + Testing Library).       |
+| `npm run lint`      | Lint the code with Oxlint.                                        |
+| `npm run format`    | Format the code with Oxfmt.                                       |
+| `npm run check`     | Format check + lint + type-check in a single command.             |
+| `npm run typecheck` | Type-check the library and the demo with `tsc`.                   |
+
+### Demo
+
+The `demo/` app consumes the library the same way a published consumer does — importing it by package name (`modern-barcode-scanner`) and stylesheet (`modern-barcode-scanner/styles.css`) against its public API. Aliases in `demo/vite.config.ts` resolve those entry points to the local build during development, keeping the demo live-reloading while validating the real package surface.
+
+### Testing
+
+Tests live next to the source as `*.test.ts(x)` and run under Vitest (via `vp test`) in a jsdom environment, with [`@testing-library/react`](https://testing-library.com/) for the component tests. Run the whole suite with `npm test`.
 
 ---
 

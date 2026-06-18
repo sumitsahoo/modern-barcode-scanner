@@ -5,27 +5,27 @@
 
 /* CSS Custom Properties - Light Mode (default) */
 :root {
-  --mbs-primary: #4db8a8;
-  --mbs-primary-dark: #3d9d8f;
+  --mbs-primary: #2563eb;
+  --mbs-primary-dark: #1d4ed8;
   --mbs-scan-color: #ef4444;
   --mbs-bg: #ffffff;
-  --mbs-bg-secondary: #f8fafa;
+  --mbs-bg-secondary: #f5f8ff;
   --mbs-bg-card: rgba(255, 255, 255, 0.95);
-  --mbs-text: #2d5550;
-  --mbs-text-secondary: rgba(45, 85, 80, 0.7);
+  --mbs-text: #1e293b;
+  --mbs-text-secondary: rgba(30, 41, 59, 0.7);
   --mbs-control-bg: rgba(0, 0, 0, 0.5);
   --mbs-control-hover: rgba(255, 255, 255, 0.2);
-  --mbs-border: rgba(77, 184, 168, 0.2);
+  --mbs-border: rgba(37, 99, 235, 0.2);
 }
 
 /* CSS Custom Properties - Dark Mode */
 @media (prefers-color-scheme: dark) {
   :root {
     --mbs-bg: #0f1419;
-    --mbs-bg-secondary: #1a2229;
-    --mbs-bg-card: rgba(26, 34, 41, 0.95);
-    --mbs-text: #e8f4f2;
-    --mbs-text-secondary: rgba(232, 244, 242, 0.7);
+    --mbs-bg-secondary: #1a2233;
+    --mbs-bg-card: rgba(26, 34, 51, 0.95);
+    --mbs-text: #e8eefc;
+    --mbs-text-secondary: rgba(232, 238, 252, 0.7);
     --mbs-border: rgba(255, 255, 255, 0.1);
   }
 }
@@ -62,7 +62,7 @@
   max-height: 200px;
   color: var(--mbs-primary);
   opacity: 0.4;
-  filter: drop-shadow(0 0 20px rgba(77, 184, 168, 0.3));
+  filter: drop-shadow(0 0 20px rgba(37, 99, 235, 0.3));
 }
 
 @media (min-width: 768px) {
