@@ -1,5 +1,10 @@
 import { useRef, useState, useCallback, useEffect } from "react";
-import { BarcodeScanner, type BarcodeScannerRef, type ScanResult, type ScannerState } from "../src";
+import {
+  BarcodeScanner,
+  type BarcodeScannerRef,
+  type ScannerState,
+  type ScanResult,
+} from "modern-barcode-scanner";
 
 /**
  * Demo App for Modern Barcode Scanner Library
@@ -44,9 +49,9 @@ const styles = {
   scanButtonStart: {
     width: "5rem",
     height: "5rem",
-    background: "linear-gradient(135deg, #4db8a8 0%, #3d9d8f 100%)",
+    background: "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
     color: "white",
-    boxShadow: "0 8px 32px rgba(77, 184, 168, 0.4)",
+    boxShadow: "0 8px 32px rgba(37, 99, 235, 0.4)",
   },
   scanButtonStop: {
     width: "3.5rem",
@@ -80,14 +85,14 @@ const styles = {
     flexDirection: "column" as const,
     alignItems: "center",
     gap: "1rem",
-    border: "1px solid rgba(77, 184, 168, 0.2)",
+    border: "1px solid rgba(37, 99, 235, 0.2)",
     boxShadow: "0 24px 64px rgba(0, 0, 0, 0.3)",
   },
   dialogIcon: {
     width: "4rem",
     height: "4rem",
     borderRadius: "50%",
-    background: "rgba(77, 184, 168, 0.1)",
+    background: "rgba(37, 99, 235, 0.1)",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
@@ -95,22 +100,22 @@ const styles = {
   checkIcon: {
     width: "2rem",
     height: "2rem",
-    color: "#4db8a8",
+    color: "#2563EB",
   },
   dialogTitle: {
     margin: 0,
     fontSize: "1.25rem",
     fontWeight: 600,
-    color: "#2d5550",
+    color: "#1e293b",
     textAlign: "center" as const,
   },
   dialogData: {
     width: "100%",
     padding: "1rem",
-    background: "#f8fafa",
+    background: "#f5f8ff",
     borderRadius: "0.75rem",
-    border: "1px solid rgba(77, 184, 168, 0.2)",
-    color: "#2d5550",
+    border: "1px solid rgba(37, 99, 235, 0.2)",
+    color: "#1e293b",
     fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, monospace",
     fontSize: "0.875rem",
     textAlign: "center" as const,
@@ -132,19 +137,19 @@ const styles = {
     border: "none",
   },
   btnCopy: {
-    background: "#f8fafa",
-    color: "#2d5550",
-    border: "1px solid rgba(77, 184, 168, 0.2)",
+    background: "#f5f8ff",
+    color: "#1e293b",
+    border: "1px solid rgba(37, 99, 235, 0.2)",
   },
   btnPrimary: {
-    background: "linear-gradient(135deg, #4db8a8 0%, #3d9d8f 100%)",
+    background: "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
     color: "white",
   },
   btnScanAgain: {
     width: "100%",
     background: "transparent",
-    color: "#4db8a8",
-    border: "1px solid #4db8a8",
+    color: "#2563EB",
+    border: "1px solid #2563EB",
     marginTop: "0.5rem",
   },
 };
@@ -190,7 +195,7 @@ const getStyles = (themeColor: string) => ({
   colorPickerLabel: {
     fontSize: "0.875rem",
     fontWeight: 500,
-    color: "#2d5550",
+    color: "#1e293b",
   },
   colorInput: {
     width: "2rem",
@@ -207,7 +212,7 @@ function App() {
   const [result, setResult] = useState<ScanResult | null>(null);
   const [state, setState] = useState<ScannerState | null>(null);
   const [copied, setCopied] = useState(false);
-  const [themeColor, setThemeColor] = useState<string>("#4db8a8");
+  const [themeColor, setThemeColor] = useState<string>("#2563EB");
 
   const dynamicStyles = getStyles(themeColor);
 

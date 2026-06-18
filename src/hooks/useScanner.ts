@@ -8,6 +8,11 @@ import {
 } from "../constants/scanner";
 import type { ScannerConfig, ScannerState, ScanResult } from "../types";
 import { getMediaConstraints, playScanSound, stopAllTracks } from "../utils";
+// The worker is inlined into the bundle (`?worker&inline`) so consumers of the
+// published library never have to resolve or copy a separate worker file —
+// it ships as a self-contained Blob inside the main JS. See GitHub issue re:
+// "service worker not loading / relative path in dist".
+import ScannerWorker from "../workers/scanner.worker.ts?worker&inline";
 import type { WorkerResponse } from "../workers/scanner.worker";
 
 interface UseScannerOptions extends ScannerConfig {
@@ -27,9 +32,7 @@ const getSharedWorker = (): Worker => {
     terminateTimeoutId = null;
   }
   if (!sharedWorker) {
-    sharedWorker = new Worker(new URL("../workers/scanner.worker.ts", import.meta.url), {
-      type: "module",
-    });
+    sharedWorker = new ScannerWorker();
   }
   workerRefCount++;
   return sharedWorker;

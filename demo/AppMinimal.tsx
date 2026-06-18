@@ -1,5 +1,10 @@
 import { useCallback, useRef, useState } from "react";
-import { BarcodeScanner, type BarcodeScannerRef, type ScannerState, type ScanResult } from "../src";
+import {
+  BarcodeScanner,
+  type BarcodeScannerRef,
+  type ScannerState,
+  type ScanResult,
+} from "modern-barcode-scanner";
 
 /**
  * Minimal Demo - Bare bones scanner for testing
@@ -8,7 +13,7 @@ function AppMinimal() {
   const scannerRef = useRef<BarcodeScannerRef>(null);
   const [result, setResult] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
-  const PRIMARY_COLOR = "#4db8a8";
+  const PRIMARY_COLOR = "#2563EB";
   const STOP_COLOR = "#ef4444";
 
   const handleScan = useCallback((scanResult: ScanResult) => {

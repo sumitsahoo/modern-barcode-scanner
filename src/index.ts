@@ -7,7 +7,17 @@
  * @packageDocumentation
  */
 
-// Styles - auto-imported when using the library
+// Styles.
+//
+// This import tells the build to extract the component CSS into a standalone
+// stylesheet (`modern-barcode-scanner/styles.css`). Because the CSS is emitted
+// as a separate file (not injected at runtime), consumers must import it once
+// in their app:
+//
+//   import "modern-barcode-scanner/styles.css";
+//
+// This is intentional — a separate stylesheet is tree-shakeable and lets
+// consumers override the design tokens without fighting injected styles.
 import "./styles.css";
 
 // Main component

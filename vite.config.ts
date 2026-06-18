@@ -1,30 +1,17 @@
 import { resolve } from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
-import dts from "vite-plugin-dts";
 
+// Library build config. The demo has its own config (demo/vite.config.ts).
+// Type declarations are emitted separately by `tsc` (see the `build` script).
 export default defineConfig({
-  plugins: [
-    react(),
-    dts({
-      insertTypesEntry: true,
-      include: ["src"],
-      exclude: ["src/**/*.test.ts", "src/**/*.test.tsx", "demo"],
-    }),
-  ],
-  server: {
-    port: 8080,
-    strictPort: true,
-    host: true,
-    cors: true,
-    allowedHosts: true, // To allow any host to access your server
-  },
-  css: {
-    // Process CSS files
-  },
-  // Exclude zbar-wasm from dependency optimization to ensure WASM files load correctly
-  optimizeDeps: {
-    exclude: ["@undecaf/zbar-wasm"],
+  plugins: [react()],
+  resolve: {
+    // Pull in the `zbar.wasm`-inlined build of @undecaf/zbar-wasm so the WASM
+    // binary is embedded as data instead of fetched from a sibling file. This
+    // is required because the scanner worker is inlined as a Blob (see
+    // useScanner.ts) and a Blob worker has no base URL to resolve assets from.
+    conditions: ["zbar-inlined", "module", "browser", "development|production"],
   },
   build: {
     lib: {
@@ -45,7 +32,7 @@ export default defineConfig({
     },
     cssCodeSplit: false,
     sourcemap: true,
-    minify: "esbuild",
+    minify: "oxc",
     copyPublicDir: false,
   },
   worker: {

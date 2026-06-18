@@ -81,7 +81,7 @@ export interface ScannerConfig {
   style?: React.CSSProperties;
   /**
    * Primary theme color for the scanner UI
-   * @default '#4db8a8'
+   * @default '#2563EB'
    */
   themeColor?: string;
 }

@@ -15,11 +15,11 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "declaration": true,
-    "declarationDir": "./dist",
-    "emitDeclarationOnly": true,
-    "outDir": "./dist"
+    "types": ["vite/client"],
+    "paths": {
+      "modern-barcode-scanner": ["../src/index.ts"],
+      "modern-barcode-scanner/styles.css": ["../src/styles.css"]
+    }
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+  "include": [".", "../src/vite-env.d.ts"]
 }

@@ -25,6 +25,13 @@ export const playScanSound = () => {
 
     oscillator.start();
     oscillator.stop(ctx.currentTime + 0.3);
+
+    // Release the AudioContext once playback finishes. Browsers cap the number
+    // of concurrent AudioContexts (~6), so creating one per scan without
+    // closing it eventually throws and silences the beep.
+    oscillator.onended = () => {
+      ctx.close().catch(() => {});
+    };
   } catch (error) {
     console.error("Failed to play scan sound:", error);
   }

@@ -63,8 +63,10 @@ Here's a minimal example to get the scanner up and running in your React applica
 import { useRef, useEffect } from 'react';
 import { BarcodeScanner, BarcodeScannerRef, ScanResult } from 'modern-barcode-scanner';
 
-// Styles are auto-imported, but you can also import manually if needed:
-// import 'modern-barcode-scanner/styles.css';
+// Import the stylesheet once, anywhere in your app. The CSS ships as a separate
+// file (so you can override the design tokens), so it is NOT injected
+// automatically — this import is required for the scanner to look right.
+import 'modern-barcode-scanner/styles.css';
 
 function App() {
   const scannerRef = useRef<BarcodeScannerRef>(null);
@@ -92,27 +94,20 @@ function App() {
         ref={scannerRef}
         onScan={handleScan}
         onError={handleError}
-        themeColor="#4db8a8" // Customize the primary UI color!
+        themeColor="#2563EB" // Customize the primary UI color!
       />
     </div>
   );
 }
 ```
 
-### WebAssembly (WASM) Configuration
+### Zero bundler configuration
 
-Under the hood, this library uses `@undecaf/zbar-wasm` which relies on WebAssembly. Depending on your bundler, you may need to explicitly exclude it from dependency optimization or configure it to serve `.wasm` files correctly.
+Under the hood, this library uses `@undecaf/zbar-wasm` for detection, running inside a Web Worker. Both the **worker** and its **WebAssembly binary are inlined directly into the bundle** — the worker as a `Blob` and the `.wasm` as embedded data.
 
-**Vite Example (`vite.config.ts`):**
+This means you do **not** need any special bundler setup: no `optimizeDeps` exclusions, no copying a worker file out of `node_modules`, and no rules to serve `.wasm` assets. Just install, import, and go — it works the same across Vite, webpack, Next.js, and other bundlers.
 
-```typescript
-export default defineConfig({
-  // ... other config
-  optimizeDeps: {
-    exclude: ['@undecaf/zbar-wasm']
-  }
-});
-```
+> The trade-off is a larger main bundle (the WASM binary is embedded), in exchange for it working out of the box in any consumer with no setup.
 
 ---
 
@@ -127,7 +122,7 @@ export default defineConfig({
 | `onScan` | `(result: ScanResult) => void` | **Required** | Callback fired when a barcode is detected. |
 | `onError` | `(error: Error) => void` | `undefined` | Callback fired when an error occurs. |
 | `onStateChange` | `(state: ScannerState) => void` | `undefined` | Callback fired when scanner state changes. |
-| `themeColor` | `string` | `'#4db8a8'` | Primary theme color for UI elements and scan line. |
+| `themeColor` | `string` | `'#2563EB'` | Primary theme color for UI elements and scan line. |
 | `scanInterval` | `number` | `100` | Time between scan attempts (in ms). |
 | `enableVibration` | `boolean` | `true` | Enable haptic feedback on scan (uses `navigator.vibrate`). |
 | `vibrationDuration`| `number` | `200` | Vibration duration (in ms). |
