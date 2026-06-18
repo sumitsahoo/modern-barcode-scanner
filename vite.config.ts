@@ -1,11 +1,23 @@
 import { resolve } from "node:path";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, lazyPlugins } from "vite-plus";
 
 // Library build config. The demo has its own config (demo/vite.config.ts).
 // Type declarations are emitted separately by `tsc` (see the `build` script).
 export default defineConfig({
-  plugins: [react()],
+  fmt: {},
+  lint: {
+    jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
+    rules: { "vite-plus/prefer-vite-plus-imports": "error" },
+    // typeAware keeps type-informed lint rules (e.g. no-floating-promises);
+    // typeCheck is left off so the linter does not re-report raw tsc compiler
+    // errors. Full type checking is done by `npm run typecheck` (tsc). This
+    // also avoids a false "excessive stack depth" on the Vite config files,
+    // caused by @vitejs/plugin-react (real `vite` types) and vite-plus-core
+    // exposing two structurally-identical-but-distinct `PluginOption` types.
+    options: { typeAware: true, typeCheck: false },
+  },
+  plugins: lazyPlugins(() => [react()]),
   resolve: {
     // Pull in the `zbar.wasm`-inlined build of @undecaf/zbar-wasm so the WASM
     // binary is embedded as data instead of fetched from a sibling file. This

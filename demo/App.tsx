@@ -238,7 +238,7 @@ function App() {
   const startScanning = useCallback(() => {
     setResult(null);
     setCopied(false);
-    scannerRef.current?.start();
+    void scannerRef.current?.start();
   }, []);
 
   const stopScanning = useCallback(() => {

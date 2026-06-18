@@ -2,9 +2,36 @@
   "name": "modern-barcode-scanner",
   "version": "1.0.2",
   "description": "A high-performance barcode scanner React component with optimized detection, torch control, and camera switching",
-  "author": "Sumit Sahoo",
+  "keywords": [
+    "barcode",
+    "camera",
+    "pwa",
+    "qr-code",
+    "react",
+    "scanner",
+    "web-worker",
+    "zbar"
+  ],
+  "homepage": "https://github.com/sumitsahoo/modern-barcode-scanner#readme",
+  "bugs": {
+    "url": "https://github.com/sumitsahoo/modern-barcode-scanner/issues"
+  },
   "license": "MIT",
+  "author": "Sumit Sahoo",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sumitsahoo/modern-barcode-scanner.git"
+  },
+  "files": [
+    "dist",
+    "!dist/assets",
+    "README.md",
+    "LICENSE"
+  ],
   "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,53 +43,22 @@
     },
     "./styles.css": "./dist/modern-barcode-scanner.css"
   },
-  "files": [
-    "dist",
-    "!dist/assets",
-    "README.md",
-    "LICENSE"
-  ],
-  "sideEffects": [
-    "**/*.css"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sumitsahoo/modern-barcode-scanner.git"
-  },
-  "bugs": {
-    "url": "https://github.com/sumitsahoo/modern-barcode-scanner/issues"
-  },
-  "homepage": "https://github.com/sumitsahoo/modern-barcode-scanner#readme",
-  "keywords": [
-    "barcode",
-    "scanner",
-    "qr-code",
-    "react",
-    "zbar",
-    "camera",
-    "web-worker",
-    "pwa"
-  ],
   "scripts": {
-    "dev": "vite --config demo/vite.config.ts",
-    "build": "vite build && tsc -p tsconfig.build.json",
+    "dev": "vp dev --config demo/vite.config.ts",
+    "build": "vp build && tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit && tsc --noEmit -p demo/tsconfig.json",
-    "preview": "vite preview --config demo/vite.config.ts",
+    "preview": "vp preview --config demo/vite.config.ts",
     "prepublishOnly": "npm run build",
-    "format": "npx biome format ./ --write",
-    "lint": "npx biome lint ./",
-    "lint:fix": "npx biome lint ./ --write",
-    "test": "vitest run"
-  },
-  "peerDependencies": {
-    "react": ">=18.0.0",
-    "react-dom": ">=18.0.0"
+    "format": "vp fmt --write",
+    "lint": "vp lint",
+    "lint:fix": "vp lint --fix",
+    "check": "vp check && npm run typecheck",
+    "test": "vp test run"
   },
   "dependencies": {
     "@undecaf/zbar-wasm": "^0.11.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^25.9.3",
@@ -73,7 +69,23 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "typescript": "^6.0.3",
-    "vite": "^8.0.16",
-    "vitest": "^4.1.9"
+    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
+    "vite-plus": "latest",
+    "vitest": "4.1.9"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
+    "vitest": "4.1.9"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": "11.17.0",
+      "onFail": "download"
+    }
   }
 }

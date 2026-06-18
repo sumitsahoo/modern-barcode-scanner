@@ -11,12 +11,12 @@ on:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-    
+
     # Required for npm Trusted Publishing (OIDC)
     permissions:
       contents: read
       id-token: write
-      
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,8 +24,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "24.x"
+          registry-url: "https://registry.npmjs.org"
 
       # Install dependencies using npm ci for clean, deterministic installs
       - name: Install dependencies

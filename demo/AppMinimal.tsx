@@ -34,7 +34,7 @@ function AppMinimal() {
       scannerRef.current?.stop();
     } else {
       setResult(null);
-      scannerRef.current?.start();
+      void scannerRef.current?.start();
     }
   }, [isScanning]);
 
