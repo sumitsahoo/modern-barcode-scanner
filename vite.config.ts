@@ -50,4 +50,11 @@ export default defineConfig({
   worker: {
     format: "es",
   },
+  test: {
+    // Components and DOM-touching helpers need a browser-like environment.
+    environment: "jsdom",
+    include: ["src/**/*.test.{ts,tsx}"],
+    setupFiles: ["./vitest.setup.ts"],
+    restoreMocks: true,
+  },
 });

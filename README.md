@@ -290,6 +290,41 @@ This library is built for speed and reliability:
 
 ---
 
+## 🧑‍💻 Development
+
+This project uses [**Vite+**](https://viteplus.dev) (`vp`) as its unified toolchain — one tool for building, testing, linting, and formatting (it bundles Vite, Vitest, Oxlint, and Oxfmt). The npm scripts invoke the locally-installed `vp` binary, so `npm install` is all you need to get going.
+
+```bash
+# Install dependencies (includes Vite+)
+npm install
+
+# Start the live demo app at http://localhost:8080
+npm run dev
+```
+
+### Scripts
+
+| Script              | Description                                                       |
+| ------------------- | ----------------------------------------------------------------- |
+| `npm run dev`       | Run the demo app with hot-module reload.                          |
+| `npm run build`     | Build the library (ESM + CJS) and emit type declarations (`tsc`). |
+| `npm run preview`   | Preview a production build of the demo.                           |
+| `npm test`          | Run the test suite once (Vitest + jsdom + Testing Library).       |
+| `npm run lint`      | Lint the code with Oxlint.                                        |
+| `npm run format`    | Format the code with Oxfmt.                                       |
+| `npm run check`     | Format check + lint + type-check in a single command.             |
+| `npm run typecheck` | Type-check the library and the demo with `tsc`.                   |
+
+### Demo
+
+The `demo/` app intentionally consumes the library exactly the way a published consumer does — importing it by package name (`modern-barcode-scanner`) and stylesheet (`modern-barcode-scanner/styles.css`) rather than reaching into `src/`. Aliases in `demo/vite.config.ts` map those public entry points to the local source so the demo stays live-reloading during development.
+
+### Testing
+
+Tests live next to the source as `*.test.ts(x)` and run under Vitest (via `vp test`) in a jsdom environment, with [`@testing-library/react`](https://testing-library.com/) for the component tests. Run the whole suite with `npm test`.
+
+---
+
 ## 📝 License
 
 MIT © [Sumit Sahoo](https://github.com/sumitsahoo)
