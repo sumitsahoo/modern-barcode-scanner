@@ -130,6 +130,9 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
           />
           {isScanning && (
             <div className="mbs-viewfinder-frame" aria-hidden="true">
+              <div className="mbs-viewfinder-viewport">
+                <ScanLine visible={showScanLine} />
+              </div>
               <span className="mbs-viewfinder-hint">Align the barcode inside the frame</span>
             </div>
           )}
@@ -145,9 +148,6 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
 
         {/* Hidden canvas for image processing */}
         <canvas ref={canvasRef} hidden />
-
-        {/* Scanning Animation Line */}
-        <ScanLine visible={isScanning && showScanLine} />
 
         {/* Camera Controls */}
         <ScannerControls

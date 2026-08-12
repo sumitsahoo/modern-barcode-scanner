@@ -87,12 +87,11 @@
 /* Guided scan region */
 .mbs-viewfinder-frame {
   position: absolute;
-  top: 50%;
+  top: 44%;
   left: 50%;
   z-index: 25;
-  width: min(76%, 30rem);
-  max-height: 58%;
-  aspect-ratio: 4 / 3;
+  width: min(calc(100% - clamp(3rem, 10vw, 10rem)), 64rem);
+  height: min(60%, 36rem);
   transform: translate(-50%, -50%);
   border: 2px solid var(--mbs-primary);
   border: 2px solid color-mix(in srgb, var(--mbs-primary) 72%, white);
@@ -101,6 +100,13 @@
   box-shadow:
     0 0 0 999vmax rgba(0, 0, 0, 0.18),
     inset 0 0 1.5rem var(--mbs-border);
+}
+
+.mbs-viewfinder-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: calc(1.25rem - 2px);
 }
 
 .mbs-viewfinder-frame::before,
@@ -222,10 +228,10 @@
 /* Scan line container - the moving element */
 .mbs-scan-line-container {
   position: absolute;
-  width: min(70%, 28rem);
+  width: calc(100% - clamp(2rem, 6vw, 4rem));
   left: 50%;
-  top: 28%;
-  z-index: 40;
+  top: 12%;
+  z-index: 1;
   pointer-events: none;
   animation: mbs-scan 2.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
   will-change: top;
@@ -261,16 +267,16 @@
   animation: mbs-trail-up 2.5s linear infinite;
 }
 
-/* Scan animation stays proportional in full-screen and embedded layouts. */
+/* The animation is positioned inside the clipped viewfinder viewport. */
 @keyframes mbs-scan {
   0% {
-    top: 28%;
+    top: 12%;
   }
   50% {
-    top: 70%;
+    top: 88%;
   }
   100% {
-    top: 28%;
+    top: 12%;
   }
 }
 
@@ -325,6 +331,36 @@
   .mbs-scan-line-trail-down,
   .mbs-scan-line-trail-up {
     display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .mbs-viewfinder-frame {
+    top: 50%;
+    width: calc(100% - 2rem);
+    height: min(48%, 25rem);
+    border-radius: 1.125rem;
+  }
+
+  .mbs-viewfinder-viewport {
+    border-radius: calc(1.125rem - 2px);
+  }
+
+  .mbs-viewfinder-hint {
+    bottom: calc(100% + 0.75rem);
+  }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  .mbs-viewfinder-frame {
+    top: 46%;
+    width: min(72%, 44rem);
+    height: calc(100% - 9rem);
+  }
+
+  .mbs-viewfinder-hint {
+    top: 0.75rem;
+    bottom: auto;
   }
 }
 

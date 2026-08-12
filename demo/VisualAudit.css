@@ -86,9 +86,13 @@ html[data-visual-audit] #root {
     linear-gradient(145deg, #141b29, #050811);
 }
 
-.visual-audit-stage.is-active .mbs-placeholder-icon {
-  color: white;
-  opacity: 0.14;
+.visual-audit-camera-feed {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 25% 35%, rgba(148, 163, 184, 0.28), transparent 20%),
+    linear-gradient(125deg, transparent 44%, rgba(148, 163, 184, 0.12) 44% 58%, transparent 58%),
+    linear-gradient(145deg, #344258, #111827 58%, #050811);
 }
 
 @media (max-width: 860px) {

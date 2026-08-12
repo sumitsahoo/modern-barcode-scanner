@@ -349,6 +349,8 @@ The `demo/` app consumes the library the same way a published consumer does — 
 
 Append `?visual-audit` to the local demo URL to open the camera-free core component audit page. It renders the real package CSS and exported controls across idle, starting, active, capability-limited, custom-theme, and compact layouts, and it respects light/dark preferences without requesting camera permission.
 
+For deterministic responsive QA of the complete demo, use `?demo-state=active` to render the camera-on interface or `?demo-state=result` to render a representative successful-detection dialog. These previews reuse the production components and styles without requiring camera hardware or a test barcode.
+
 ### Testing
 
 Tests live next to the source as `*.test.ts(x)` and run under Vitest (via `vp test`) in a jsdom environment, with [`@testing-library/react`](https://testing-library.com/) for the component tests. Run the whole suite with `npm test`.

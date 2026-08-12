@@ -31,12 +31,14 @@ const ActivePreview = ({
     style={{ "--mbs-primary": themeColor } as CSSProperties}
   >
     <section className="mbs-video-container" aria-label="Scanner preview">
-      <IconCameraPlaceholder className="mbs-placeholder-icon" />
+      <div className="visual-audit-camera-feed" aria-hidden="true" />
       <div className="mbs-viewfinder-frame" aria-hidden="true">
+        <div className="mbs-viewfinder-viewport">
+          <ScanLine visible={showScanLine} />
+        </div>
         <span className="mbs-viewfinder-hint">Align the barcode inside the frame</span>
       </div>
     </section>
-    <ScanLine visible={showScanLine} />
     <ScannerControls
       isScanning
       isTorchOn={torchOn}

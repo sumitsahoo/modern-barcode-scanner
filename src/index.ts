@@ -54,5 +54,10 @@ export {
   IconRotateCamera,
   IconTorchOn,
   IconTorchOff,
+  IconCamera,
+  IconCameraOff,
   IconCameraPlaceholder,
+  IconCheck,
+  IconScanFrame,
+  IconAdjustments,
 } from "./components";

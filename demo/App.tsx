@@ -1,38 +1,54 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   BarcodeScanner,
+  IconAdjustments,
+  IconCamera,
+  IconCameraOff,
+  IconCheck,
+  IconScanFrame,
+  ScanLine,
+  ScannerControls,
   type BarcodeScannerRef,
   type ScannerState,
   type ScanResult,
 } from "modern-barcode-scanner";
 import "./App.css";
 
-const CameraIcon = ({ stopped = false }: { stopped?: boolean }) => (
-  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path
-      d="M3 16.8V9.2C3 7.43 4.43 6 6.2 6h1.05a1 1 0 0 0 .9-.55l.41-.82A2 2 0 0 1 10.35 3.5h3.3a2 2 0 0 1 1.79 1.13l.41.82a1 1 0 0 0 .9.55h1.05A3.2 3.2 0 0 1 21 9.2v7.6a3.2 3.2 0 0 1-3.2 3.2H6.2A3.2 3.2 0 0 1 3 16.8Z"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <circle cx="12" cy="13" r="3" stroke="currentColor" strokeWidth="1.8" />
-    {stopped && (
-      <path d="m4 4 16 16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-    )}
-  </svg>
-);
+export type DemoPreviewState = "active" | "result";
 
-const SuccessIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path
-      d="m5 13 4 4L19 7"
-      stroke="currentColor"
-      strokeWidth="2.25"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+const PREVIEW_RESULT: ScanResult = {
+  typeName: "QR code",
+  scanData: "https://example.com/modern-barcode-scanner",
+};
+
+const ActiveScannerPreview = ({ themeColor }: { themeColor: string }) => (
+  <div
+    className="mbs-container demo-camera-preview"
+    data-scanning="true"
+    data-state="scanning"
+    style={{ "--mbs-primary": themeColor } as CSSProperties}
+  >
+    <section className="mbs-video-container" aria-label="Active camera preview">
+      <div className="demo-camera-preview-feed" aria-hidden="true" />
+      <div className="mbs-viewfinder-frame" aria-hidden="true">
+        <div className="mbs-viewfinder-viewport">
+          <ScanLine visible />
+        </div>
+        <span className="mbs-viewfinder-hint">Align the barcode inside the frame</span>
+      </div>
+    </section>
+    <span className="mbs-sr-only" role="status">
+      Barcode scanner active
+    </span>
+    <ScannerControls
+      isScanning
+      isTorchOn={false}
+      shouldShowRotateButton
+      shouldShowTorchButton
+      onSwitchCamera={() => undefined}
+      onToggleTorch={() => undefined}
     />
-  </svg>
+  </div>
 );
 
 const getReadableAccentText = (hexColor: string) => {
@@ -51,16 +67,18 @@ const getReadableAccentText = (hexColor: string) => {
   return luminance > 0.179 ? "#000000" : "#ffffff";
 };
 
-function App() {
+function App({ previewState }: { previewState?: DemoPreviewState }) {
   const scannerRef = useRef<BarcodeScannerRef>(null);
   const resultDialogRef = useRef<HTMLDivElement>(null);
-  const [result, setResult] = useState<ScanResult | null>(null);
+  const [result, setResult] = useState<ScanResult | null>(
+    previewState === "result" ? PREVIEW_RESULT : null,
+  );
   const [state, setState] = useState<ScannerState | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [themeColor, setThemeColor] = useState("#2563EB");
 
-  const isScanning = state?.isScanning ?? false;
+  const isScanning = previewState === "active" || (state?.isScanning ?? false);
   const isStarting = state?.isStarting ?? false;
   const isActive = isStarting || isScanning;
   const appStyle = {
@@ -153,25 +171,22 @@ function App() {
 
   return (
     <main className="demo-app" style={appStyle} data-scanning={isActive}>
-      <BarcodeScanner
-        ref={scannerRef}
-        onScan={handleScan}
-        onError={handleError}
-        onStateChange={setState}
-        enableVibration
-        themeColor={themeColor}
-      />
+      {previewState === "active" ? (
+        <ActiveScannerPreview themeColor={themeColor} />
+      ) : (
+        <BarcodeScanner
+          ref={scannerRef}
+          onScan={handleScan}
+          onError={handleError}
+          onStateChange={setState}
+          enableVibration
+          themeColor={themeColor}
+        />
+      )}
 
       <header className="demo-header">
         <div className="demo-brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none">
-            <path
-              d="M9 6H7a1 1 0 0 0-1 1v2m9-3h2a1 1 0 0 1 1 1v2M9 18H7a1 1 0 0 1-1-1v-2m9 3h2a1 1 0 0 0 1-1v-2M8.5 12h7"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-          </svg>
+          <IconScanFrame />
         </div>
         <h1>Modern Barcode Scanner</h1>
       </header>
@@ -189,9 +204,7 @@ function App() {
           style={{ backgroundColor: themeColor }}
           aria-hidden="true"
         />
-        <svg className="demo-theme-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M3 4h10M5 8h6m-4 4h2" stroke="currentColor" strokeLinecap="round" />
-        </svg>
+        <IconAdjustments className="demo-theme-icon" />
       </label>
 
       {!result && (
@@ -204,7 +217,7 @@ function App() {
               isStarting ? "Cancel camera" : isScanning ? "Stop scanning" : "Start scanning"
             }
           >
-            <CameraIcon stopped={isActive} />
+            {isActive ? <IconCameraOff /> : <IconCamera />}
           </button>
         </div>
       )}
@@ -230,7 +243,7 @@ function App() {
             tabIndex={-1}
           >
             <div className="demo-dialog-icon">
-              <SuccessIcon />
+              <IconCheck />
             </div>
             <h2 id="scan-result-title">{result.typeName || "Barcode detected"}</h2>
             <output className="demo-result-data">{result.scanData}</output>

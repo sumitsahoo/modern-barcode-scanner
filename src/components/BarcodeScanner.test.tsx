@@ -53,7 +53,9 @@ describe("BarcodeScanner", () => {
     mockScannerApi.scannerState.isScanning = true;
     const { container } = render(<BarcodeScanner onScan={vi.fn()} />);
 
-    expect(container.querySelector(".mbs-viewfinder-frame")).not.toBeNull();
+    const frame = container.querySelector(".mbs-viewfinder-frame");
+    expect(frame).not.toBeNull();
+    expect(frame?.querySelector(".mbs-scan-line-container")).not.toBeNull();
     expect(screen.getByRole("status")).toHaveTextContent("Barcode scanner active");
 
     mockScannerApi.scannerState.isScanning = false;
