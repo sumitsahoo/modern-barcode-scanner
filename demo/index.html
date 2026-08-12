@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#2563EB" />
     <meta
       name="description"
@@ -18,17 +18,14 @@
       #root {
         margin: 0;
         padding: 0;
-        height: 100dvh;
-        overflow: hidden;
-        background: #f7f9ff;
+        width: 100%;
+        min-height: 100%;
+        overflow-x: clip;
       }
 
-      @media (prefers-color-scheme: dark) {
-        html,
-        body,
-        #root {
-          background: #050912;
-        }
+      #root {
+        height: 100dvh;
+        overflow-y: hidden;
       }
     </style>
   </head>

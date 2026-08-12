@@ -65,21 +65,24 @@ function VisualAudit() {
   return (
     <main className="visual-audit-page">
       <header className="visual-audit-header">
-        <p>Core component QA</p>
-        <h1>Modern Barcode Scanner</h1>
-        <span>Idle, active, capability-aware, and themed states</span>
+        <p>Rendered state matrix</p>
+        <h1>Scanner interface audit</h1>
+        <span>
+          Camera-free fixtures for the idle, permission, active, capability, torch, and theme
+          states.
+        </span>
       </header>
 
       <div className="visual-audit-grid">
         <section className="visual-audit-card">
-          <h2>Idle · default</h2>
+          <h2>Camera off · default</h2>
           <div className="visual-audit-stage">
             <BarcodeScanner onScan={() => undefined} />
           </div>
         </section>
 
         <section className="visual-audit-card">
-          <h2>Requesting camera</h2>
+          <h2>Camera permission · pending</h2>
           <StartingPreview />
         </section>
 

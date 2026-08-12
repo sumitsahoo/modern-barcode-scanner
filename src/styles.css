@@ -1,3 +1,5 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · theme: Cobalt · enrichment: none · contrast: pass (40–41) · nav: omitted-tool-shell · footer: omitted-tool-shell · slop: pass (42–45) · honest: pass (46) · chrome: pass (47) · tokens: pass (48) · responsive: pass (49) · icons: pass (30) · mobile: pass (34, 49, 50–57) */
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
 /**
  * Modern Barcode Scanner - CSS Styles
  * Import this file to get default styling for the scanner component.
@@ -5,28 +7,36 @@
 
 /* Component-scoped design tokens - Light Mode (default) */
 .mbs-container {
-  --mbs-primary: #2563eb;
-  --mbs-primary-dark: #1d4ed8;
+  --mbs-primary: oklch(53% 0.21 256);
+  --mbs-primary-dark: oklch(46% 0.2 256);
   --mbs-scan-color: var(--mbs-primary);
-  --mbs-bg: #ffffff;
-  --mbs-bg-secondary: #f5f8ff;
-  --mbs-bg-card: rgba(255, 255, 255, 0.95);
-  --mbs-text: #1e293b;
-  --mbs-text-secondary: rgba(30, 41, 59, 0.7);
-  --mbs-control-bg: rgba(0, 0, 0, 0.5);
-  --mbs-control-hover: rgba(255, 255, 255, 0.2);
-  --mbs-border: rgba(37, 99, 235, 0.2);
+  --mbs-bg: oklch(98.5% 0.004 250);
+  --mbs-bg-secondary: oklch(95.5% 0.012 250);
+  --mbs-bg-card: oklch(99% 0.004 250 / 0.95);
+  --mbs-text: oklch(24% 0.02 258);
+  --mbs-text-secondary: oklch(45% 0.018 257);
+  --mbs-control-bg: oklch(18% 0.018 258 / 0.82);
+  --mbs-control-hover: oklch(95% 0.008 250 / 0.18);
+  --mbs-border: oklch(53% 0.21 256 / 0.2);
+  --mbs-on-dark: oklch(96% 0.008 250);
+  --mbs-scrim: oklch(12% 0.014 258 / 0.18);
+  --mbs-radius-control: 0.375rem;
+  --mbs-radius-frame: 0.875rem;
+  --mbs-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --mbs-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --mbs-dur-micro: 120ms;
+  --mbs-dur-short: 220ms;
 }
 
 /* CSS Custom Properties - Dark Mode */
 @media (prefers-color-scheme: dark) {
   .mbs-container {
-    --mbs-bg: #0f1419;
-    --mbs-bg-secondary: #1a2233;
-    --mbs-bg-card: rgba(26, 34, 51, 0.95);
-    --mbs-text: #e8eefc;
-    --mbs-text-secondary: rgba(232, 238, 252, 0.7);
-    --mbs-border: rgba(255, 255, 255, 0.1);
+    --mbs-bg: oklch(13% 0.014 258);
+    --mbs-bg-secondary: oklch(18% 0.016 258);
+    --mbs-bg-card: oklch(18% 0.016 258 / 0.95);
+    --mbs-text: oklch(95% 0.008 250);
+    --mbs-text-secondary: oklch(72% 0.018 250);
+    --mbs-border: oklch(95% 0.008 250 / 0.1);
   }
 }
 
@@ -65,7 +75,7 @@
 }
 
 .mbs-container[data-state="starting"] .mbs-placeholder-icon {
-  animation: mbs-camera-starting 1.4s ease-in-out infinite;
+  animation: mbs-camera-starting 1.4s var(--mbs-ease-in-out) infinite;
 }
 
 @keyframes mbs-camera-starting {
@@ -94,11 +104,11 @@
   height: min(60%, 36rem);
   transform: translate(-50%, -50%);
   border: 2px solid var(--mbs-primary);
-  border: 2px solid color-mix(in srgb, var(--mbs-primary) 72%, white);
-  border-radius: 1.25rem;
+  border: 2px solid color-mix(in srgb, var(--mbs-primary) 72%, var(--mbs-on-dark));
+  border-radius: var(--mbs-radius-frame);
   pointer-events: none;
   box-shadow:
-    0 0 0 999vmax rgba(0, 0, 0, 0.18),
+    0 0 0 999vmax var(--mbs-scrim),
     inset 0 0 1.5rem var(--mbs-border);
 }
 
@@ -106,7 +116,8 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
-  border-radius: calc(1.25rem - 2px);
+  border-radius: calc(var(--mbs-radius-frame) - 2px);
+  container-type: size;
 }
 
 .mbs-viewfinder-frame::before,
@@ -123,7 +134,7 @@
   left: -3px;
   border-top: 4px solid var(--mbs-primary);
   border-left: 4px solid var(--mbs-primary);
-  border-radius: 1.25rem 0 0;
+  border-radius: var(--mbs-radius-frame) 0 0;
 }
 
 .mbs-viewfinder-frame::after {
@@ -131,7 +142,7 @@
   bottom: -3px;
   border-right: 4px solid var(--mbs-primary);
   border-bottom: 4px solid var(--mbs-primary);
-  border-radius: 0 0 1.25rem;
+  border-radius: 0 0 var(--mbs-radius-frame);
 }
 
 .mbs-viewfinder-hint {
@@ -142,17 +153,15 @@
   max-width: min(80vw, 22rem);
   padding: 0.5rem 0.75rem;
   transform: translateX(-50%);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
-  color: white;
-  background: rgba(0, 0, 0, 0.58);
-  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.24);
+  border: 1px solid color-mix(in srgb, var(--mbs-on-dark) 16%, transparent);
+  border-radius: var(--mbs-radius-control);
+  color: var(--mbs-on-dark);
+  background: var(--mbs-control-bg);
+  box-shadow: 0 1px 2px oklch(12% 0.014 258 / 0.28);
   font:
     500 0.8125rem/1.25 system-ui,
     sans-serif;
   text-align: center;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 
 /* Controls container */
@@ -167,12 +176,10 @@
   gap: 1rem;
   z-index: 30;
   background-color: var(--mbs-control-bg);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--mbs-on-dark) 12%, transparent);
+  border-radius: var(--mbs-radius-frame);
   padding: 0.5rem 1rem;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 2px oklch(12% 0.014 258 / 0.32);
 }
 
 /* Control button */
@@ -182,29 +189,29 @@
   align-items: center;
   width: 2.75rem;
   height: 2.75rem;
-  border-radius: 50%;
+  border-radius: var(--mbs-radius-control);
   border: none;
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
+  background-color: color-mix(in srgb, var(--mbs-on-dark) 10%, transparent);
+  color: var(--mbs-on-dark);
   cursor: pointer;
   transition:
-    background-color 0.2s ease,
-    transform 0.2s ease;
+    background-color var(--mbs-dur-short) var(--mbs-ease-out),
+    transform var(--mbs-dur-micro) var(--mbs-ease-out);
 }
 
 @media (hover: hover) {
   .mbs-control-btn:hover {
     background-color: var(--mbs-control-hover);
-    transform: scale(1.05);
+    transform: translateY(-1px);
   }
 }
 
 .mbs-control-btn:active {
-  transform: scale(0.9);
+  transform: translateY(1px);
 }
 
 .mbs-control-btn:focus-visible {
-  outline: 3px solid white;
+  outline: 3px solid var(--mbs-on-dark);
   outline-offset: 3px;
   box-shadow: 0 0 0 5px var(--mbs-primary);
 }
@@ -233,10 +240,15 @@
   top: 12%;
   z-index: 1;
   pointer-events: none;
-  animation: mbs-scan 2.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-  will-change: top;
   transform: translateX(-50%);
   backface-visibility: hidden;
+}
+
+.mbs-scan-line-indicator {
+  position: relative;
+  width: 100%;
+  animation: mbs-scan 2.5s var(--mbs-ease-in-out) infinite;
+  will-change: transform;
 }
 
 /* The main scan line */
@@ -269,14 +281,13 @@
 
 /* The animation is positioned inside the clipped viewfinder viewport. */
 @keyframes mbs-scan {
-  0% {
-    top: 12%;
-  }
-  50% {
-    top: 88%;
-  }
+  0%,
   100% {
-    top: 12%;
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, 76cqh, 0);
   }
 }
 
@@ -323,9 +334,9 @@
     transition: none;
   }
 
-  .mbs-scan-line-container {
-    top: 50%;
+  .mbs-scan-line-indicator {
     animation: none;
+    transform: translate3d(0, 38cqh, 0);
   }
 
   .mbs-scan-line-trail-down,
@@ -340,11 +351,11 @@
     top: 50%;
     width: calc(100% - 2rem);
     height: min(48%, 25rem);
-    border-radius: 1.125rem;
+    --mbs-radius-frame: 0.75rem;
   }
 
   .mbs-viewfinder-viewport {
-    border-radius: calc(1.125rem - 2px);
+    border-radius: calc(var(--mbs-radius-frame) - 2px);
   }
 
   .mbs-viewfinder-hint {

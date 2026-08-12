@@ -2,10 +2,20 @@ import { expect, test, type Page } from "@playwright/test";
 
 const viewports = {
   desktop: { width: 1440, height: 900 },
-  portrait: { width: 390, height: 844 },
   compact: { width: 320, height: 568 },
+  mobile: { width: 375, height: 667 },
+  portrait: { width: 414, height: 896 },
+  tablet: { width: 768, height: 1024 },
   landscape: { width: 844, height: 390 },
 } as const;
+
+const hallmarkViewports = [
+  viewports.compact,
+  viewports.mobile,
+  viewports.portrait,
+  viewports.tablet,
+  viewports.desktop,
+] as const;
 
 const expectNoHorizontalOverflow = async (page: Page) => {
   const dimensions = await page.evaluate(() => ({
@@ -17,7 +27,7 @@ const expectNoHorizontalOverflow = async (page: Page) => {
 };
 
 test("visual audit cards fit desktop and mobile viewports", async ({ page }) => {
-  for (const viewport of [viewports.desktop, viewports.portrait]) {
+  for (const viewport of hallmarkViewports) {
     await page.setViewportSize(viewport);
     await page.goto("/visual.html?visual-audit");
 
@@ -35,6 +45,71 @@ test("visual audit cards fit desktop and mobile viewports", async ({ page }) => 
     for (const edge of cardEdges) {
       expect(edge.left).toBeGreaterThanOrEqual(0);
       expect(edge.right).toBeLessThanOrEqual(viewport.width);
+    }
+  }
+});
+
+test("every demo state remains legible and contained at Hallmark breakpoints", async ({ page }) => {
+  const states = ["idle", "starting", "active", "result", "error"] as const;
+
+  for (const viewport of hallmarkViewports) {
+    await page.setViewportSize(viewport);
+
+    for (const state of states) {
+      await page.goto(`/visual.html?demo-state=${state}`);
+      await expectNoHorizontalOverflow(page);
+
+      const pageDimensions = await page.evaluate(() => ({
+        clientHeight: document.documentElement.clientHeight,
+        scrollHeight: document.documentElement.scrollHeight,
+      }));
+      expect(pageDimensions.scrollHeight).toBe(pageDimensions.clientHeight);
+
+      const visibleButtons = page.locator("button:visible");
+      const buttonStyles = await visibleButtons.evaluateAll((buttons) =>
+        buttons.map((button) => {
+          const box = button.getBoundingClientRect();
+          return {
+            height: box.height,
+            text: button.textContent?.trim() ?? "",
+            whiteSpace: getComputedStyle(button).whiteSpace,
+            width: box.width,
+            x: box.x,
+            y: box.y,
+          };
+        }),
+      );
+
+      for (const button of buttonStyles) {
+        expect(button.height).toBeGreaterThanOrEqual(44);
+        if (button.text) expect(button.whiteSpace).toBe("nowrap");
+        expect(button.x).toBeGreaterThanOrEqual(0);
+        expect(button.y).toBeGreaterThanOrEqual(0);
+        expect(button.x + button.width).toBeLessThanOrEqual(viewport.width);
+        expect(button.y + button.height).toBeLessThanOrEqual(viewport.height);
+      }
+
+      if (state === "idle") {
+        await expect(page.getByText("Scan when ready.")).toBeVisible();
+        await expect(page.getByRole("button", { name: "Start scanning" })).toContainText(
+          "Start scan",
+        );
+      } else if (state === "starting") {
+        await expect(page.getByText("Starting camera", { exact: true })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Cancel camera" })).toContainText("Cancel");
+      } else if (state === "active") {
+        await expect(page.getByText("Camera on", { exact: true })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Stop scanning" })).toContainText(
+          "Stop scan",
+        );
+      } else if (state === "result") {
+        await expect(page.getByRole("dialog", { name: "QR code" })).toBeVisible();
+      } else {
+        const alert = page.getByRole("alert");
+        await expect(alert).toBeVisible();
+        await expect(alert).toContainText("Scanning paused");
+        await expect(alert).not.toContainText("1359896");
+      }
     }
   }
 });
@@ -65,6 +140,17 @@ test("active scanner controls remain usable in portrait and short landscape layo
       expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
       expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
     }
+
+    const stopButton = await page.getByRole("button", { name: "Stop scanning" }).boundingBox();
+    const cameraControls = await page.getByRole("group", { name: "Camera controls" }).boundingBox();
+    expect(stopButton).not.toBeNull();
+    expect(cameraControls).not.toBeNull();
+    const controlsOverlap =
+      stopButton!.x < cameraControls!.x + cameraControls!.width &&
+      stopButton!.x + stopButton!.width > cameraControls!.x &&
+      stopButton!.y < cameraControls!.y + cameraControls!.height &&
+      stopButton!.y + stopButton!.height > cameraControls!.y;
+    expect(controlsOverlap).toBe(false);
   }
 });
 
@@ -74,7 +160,7 @@ test("result dialog fits a compact viewport and traps keyboard focus", async ({ 
 
   const dialog = page.getByRole("dialog", { name: "QR code" });
   await expect(dialog).toBeVisible();
-  await expect(dialog).toBeFocused();
+  await expect(page.getByRole("button", { name: "Copy result" })).toBeFocused();
   await expectNoHorizontalOverflow(page);
 
   const box = await dialog.boundingBox();
@@ -101,7 +187,7 @@ test("dark reduced-motion mode disables every scan-line animation", async ({ pag
     backgroundColor: getComputedStyle(document.querySelector(".demo-app")!).backgroundColor,
     animations: [
       ...document.querySelectorAll(
-        ".mbs-scan-line-container, .mbs-scan-line-trail-down, .mbs-scan-line-trail-up",
+        ".mbs-scan-line-indicator, .mbs-scan-line-trail-down, .mbs-scan-line-trail-up",
       ),
     ].map((element) => {
       const styles = getComputedStyle(element);

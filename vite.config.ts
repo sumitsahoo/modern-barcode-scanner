@@ -6,10 +6,10 @@ import { defineConfig, lazyPlugins } from "vite-plus";
 // Type declarations are emitted separately by `tsc` (see the `build` script).
 export default defineConfig({
   fmt: {
-    ignorePatterns: ["src/decoders/zxing/generated/**"],
+    ignorePatterns: [".agents/**", "src/decoders/zxing/generated/**"],
   },
   lint: {
-    ignorePatterns: ["src/decoders/zxing/generated/**"],
+    ignorePatterns: [".agents/**", "src/decoders/zxing/generated/**"],
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     rules: { "vite-plus/prefer-vite-plus-imports": "error" },
     // typeAware keeps type-informed lint rules (e.g. no-floating-promises);
