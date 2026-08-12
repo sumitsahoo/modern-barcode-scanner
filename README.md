@@ -12,6 +12,14 @@
 
 ---
 
+## Interface Preview
+
+![Modern Barcode Scanner in its camera-off idle state](./docs/assets/scanner-idle.jpg)
+
+Desktop idle state at 1440 × 900. The same interface is audited across desktop, tablet, and mobile in the [design audit](./docs/DESIGN_AUDIT.md).
+
+---
+
 ## ✨ Features
 
 - 🚀 **High Performance**: A first-party ZXing-C++ WebAssembly engine prioritizes the visible scan region, rejects low-value frames off-thread, reuses memory, and copies only luminance into WASM.
@@ -109,7 +117,7 @@ This means you do **not** need any special bundler setup: no `optimizeDeps` excl
 
 > The trade-off is a larger main bundle (the WASM binary is embedded), in exchange for it working out of the box in any consumer with no setup.
 
-The source lock, reproducible build, artifact checksums, SBOM, test matrix, and smart-enhancement roadmap are documented in the [first-party decoder migration](./docs/DECODER_MIGRATION.md). No `@undecaf/zbar-wasm` runtime dependency remains.
+The source lock, reproducible build, artifact checksums, SBOM, test matrix, and smart-enhancement roadmap are documented in the [first-party decoder migration](./docs/DECODER_MIGRATION.md). Responsive states, visual decisions, and the current Hallmark review are recorded in the [design audit](./docs/DESIGN_AUDIT.md). No `@undecaf/zbar-wasm` runtime dependency remains.
 
 ---
 
@@ -294,15 +302,23 @@ Override tokens on a scanner instance (or use the `themeColor` prop for the prim
 
 Choose accent and background colors with sufficient contrast for your application, especially when overriding the defaults.
 
-| Token                 | Default                   | Purpose                             |
-| --------------------- | ------------------------- | ----------------------------------- |
-| `--mbs-primary`       | `#2563eb`                 | Viewfinder and primary accent       |
-| `--mbs-scan-color`    | `var(--mbs-primary)`      | Animated scan line and trail        |
-| `--mbs-bg`            | `#ffffff`                 | Scanner background                  |
-| `--mbs-bg-secondary`  | `#f5f8ff`                 | Background gradient highlight       |
-| `--mbs-control-bg`    | `rgba(0, 0, 0, 0.5)`      | Camera-control toolbar background   |
-| `--mbs-control-hover` | `rgba(255, 255, 255, .2)` | Camera-control hover background     |
-| `--mbs-border`        | `rgba(37, 99, 235, .2)`   | Subtle borders and placeholder glow |
+| Token                  | Default                       | Purpose                                    |
+| ---------------------- | ----------------------------- | ------------------------------------------ |
+| `--mbs-primary`        | `oklch(53% 0.21 256)`         | Viewfinder brackets and primary accent     |
+| `--mbs-primary-dark`   | `oklch(46% 0.2 256)`          | Darker accent state                        |
+| `--mbs-scan-color`     | `var(--mbs-primary)`          | Animated scan line and restrained trail    |
+| `--mbs-bg`             | `oklch(98.5% 0.004 250)`      | Scanner background                         |
+| `--mbs-bg-secondary`   | `oklch(95.5% 0.012 250)`      | Background highlight                       |
+| `--mbs-bg-card`        | `oklch(99% 0.004 250 / 0.95)` | Raised scanner surface                     |
+| `--mbs-text`           | `oklch(24% 0.02 258)`         | Primary text                               |
+| `--mbs-text-secondary` | `oklch(45% 0.018 257)`        | Secondary text                             |
+| `--mbs-control-bg`     | `oklch(18% 0.018 258 / 0.82)` | Camera-control toolbar background          |
+| `--mbs-control-hover`  | `oklch(95% 0.008 250 / 0.18)` | Camera-control hover background            |
+| `--mbs-border`         | `oklch(53% 0.21 256 / 0.2)`   | Subtle borders and placeholder glow        |
+| `--mbs-on-dark`        | `oklch(96% 0.008 250)`        | Text and icons on camera surfaces          |
+| `--mbs-scrim`          | `oklch(12% 0.014 258 / 0.18)` | Area outside the prioritized viewfinder    |
+| `--mbs-radius-control` | `0.375rem`                    | Button and hint corner radius              |
+| `--mbs-radius-frame`   | `0.875rem`                    | Viewfinder and control-group corner radius |
 
 ### Overriding Classes
 
@@ -390,9 +406,9 @@ npm run dev
 
 The `demo/` app consumes the library the same way a published consumer does — importing it by package name (`modern-barcode-scanner`) and stylesheet (`modern-barcode-scanner/styles.css`) against its public API. Aliases in `demo/vite.config.ts` resolve those entry points to the local build during development, keeping the demo live-reloading while validating the real package surface.
 
-Append `?visual-audit` to the local demo URL to open the camera-free core component audit page. It renders the real package CSS and exported controls across idle, starting, active, capability-limited, custom-theme, and compact layouts, and it respects light/dark preferences without requesting camera permission.
+Append `?visual-audit` to the local demo URL to open the camera-free core component audit page. It renders the real package CSS, the complete icon system, viewfinder variants, exported controls, capability-limited controls, and custom accents without requesting camera permission.
 
-For deterministic responsive QA of the complete demo, use `?demo-state=active` to render the camera-on interface or `?demo-state=result` to render a representative successful-detection dialog. These previews reuse the production components and styles without requiring camera hardware or a test barcode.
+For deterministic responsive QA of the complete demo, use `?demo-state=<state>`, where `<state>` is `idle`, `starting`, `active`, `result`, or `error`. These previews reuse the production components and styles without requiring camera hardware or a test barcode. The maintained viewport/state matrix and current findings are in [`docs/DESIGN_AUDIT.md`](./docs/DESIGN_AUDIT.md).
 
 ### Testing
 

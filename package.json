@@ -30,7 +30,9 @@
     "LICENSE",
     "licenses",
     "THIRD_PARTY_NOTICES.md",
+    "docs/DESIGN_AUDIT.md",
     "docs/DECODER_MIGRATION.md",
+    "docs/assets/scanner-idle.jpg",
     "engine/wasm/source-lock.json",
     "engine/wasm/sbom.spdx.json"
   ],

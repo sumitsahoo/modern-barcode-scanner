@@ -80,6 +80,7 @@ Automated validation covers:
 - `object-fit: cover` viewfinder mapping, four focused passes per periodic full-frame recovery pass, and isolated decode-failure recovery;
 - all existing component, accessibility, camera cleanup, multi-instance, session, stale-result, sound, and utility regressions;
 - deterministic desktop, portrait, compact, and short-landscape layouts, including dark mode, reduced motion, and dialog focus containment;
+- manual visual review of idle, starting, active, result, and recoverable-error states at desktop, tablet, and mobile widths, including the 320 px and 414 px mobile safety widths;
 - the self-contained Blob worker in Chromium, Firefox, and WebKit;
 - the full Chromium fake-camera path from `getUserMedia` through React and the worker to `onScan`;
 - production ESM/CJS builds, declarations, package contents, dependency audit, artifact hashes, and bundle size.
@@ -96,15 +97,20 @@ npm pack --dry-run
 
 ### Verification snapshot (2026-08-12)
 
-| Gate                        | Verified result                                                                                    |
-| --------------------------- | -------------------------------------------------------------------------------------------------- |
-| Unit and integration tests  | 102 passed, including 20 real-image and engine-exception cases                                     |
-| Browser matrix              | 16 passed across responsive UI, worker, Chromium, Firefox, WebKit, and Chromium fake-camera gates  |
-| Dependency audit            | 0 known vulnerabilities                                                                            |
-| Engine reproducibility      | 3 fresh builds produced SHA-256 `4c7b8d43e6122c5c38147c5298372188ec2be7dc2bd11689f157426759b4abc3` |
-| Production bundle           | ESM 464.46 kB gzip; CJS 461.41 kB gzip                                                             |
-| Package dry run             | 59 files, 973.4 kB tarball; license, source lock, SBOM, README, and migration guide included       |
-| Local warm decode benchmark | 392×392 QR, 250 scans: 0.50 ms p50, 0.58 ms p95                                                    |
+| Gate                        | Verified result                                                                                                                          |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit and integration tests  | 113 passed, including icon-contract, frame-quality, viewfinder-mapping, real-image, and engine-exception cases                           |
+| Browser matrix              | 15 passed locally: responsive UI and worker tests in Chromium/WebKit plus the complete Chromium fake-camera pipeline                     |
+| Responsive visual audit     | 25 state/layout combinations reviewed at 1440×900, 768×1024, 375×812, 320×568, and 414×896; Hallmark found 0 critical/major/minor issues |
+| Dependency audit            | 0 known vulnerabilities                                                                                                                  |
+| Engine reproducibility      | 3 fresh builds produced SHA-256 `4c7b8d43e6122c5c38147c5298372188ec2be7dc2bd11689f157426759b4abc3`                                       |
+| Production bundle           | ESM 464.61 kB gzip; CJS 461.55 kB gzip                                                                                                   |
+| Package dry run             | 61 files, 997.7 kB tarball; README, design screenshot/audit, licenses, source lock, SBOM, and migration guide included                   |
+| Local warm decode benchmark | 392×392 QR, 250 scans: 0.50 ms p50, 0.58 ms p95                                                                                          |
+
+The Firefox Playwright project remains part of the repository and CI browser matrix. On the 2026-08-12 local macOS verification host, the bundled Firefox runtime stalled during browser launch before any application code executed; Chromium and WebKit completed the same UI and worker assertions successfully. This is recorded as a host-runtime limitation rather than an application failure.
+
+The complete responsive findings and maintained visual reference are in [DESIGN_AUDIT.md](./DESIGN_AUDIT.md).
 
 The timing sample was collected on an Apple Silicon development machine and is a regression reference, not a device-wide performance guarantee. Browser, Android, and iOS performance varies with hardware, camera resolution, thermal state, and barcode quality.
 
