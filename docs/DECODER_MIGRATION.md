@@ -1,70 +1,129 @@
-# Decoder migration plan
+# First-party barcode engine migration
 
-## Decision
+## Outcome
 
-Do not write a clean-room multi-format barcode decoder inside the React library. Barcode detection is the reliability-critical part of the product, and a new decoder without a large conformance corpus would create false positives, missed scans, and security risk.
+Modern Barcode Scanner now owns its barcode WebAssembly integration, build, artifacts, compatibility layer, tests, and release path. The runtime dependency on `@undecaf/zbar-wasm` is removed.
 
-Instead, own the integration, build, tests, and release artifact while using a proven decoding engine. The recommended target is a pinned, reader-only [ZXing-C++](https://github.com/zxing-cpp/zxing-cpp) WebAssembly build produced by this repository. ZXing-C++ is Apache-2.0 licensed, supports WebAssembly, and covers the current formats plus PDF417, Data Matrix, and Aztec. Native `BarcodeDetector` can be a progressive fast path, but it cannot be the only implementation because browser and format support vary.
+The engine is a reader-only [ZXing-C++](https://github.com/zxing-cpp/zxing-cpp) WebAssembly build. ZXing-C++ was selected instead of writing a new decoding algorithm from scratch because barcode correctness requires a large standards and image corpus; it is actively developed, Apache-2.0 licensed, browser-compatible through WebAssembly, and supports both the existing formats and useful modern 2D formats.
 
-## Current state
+## Goals and decisions
 
-- `@undecaf/zbar-wasm` 0.11.0 is the latest published upstream version; the application is not behind an available release.
-- The release is dated May 2024 and the repository's latest commit is from July 2024, so owning the upgrade path is still justified.
-- The inlined ZBar artifact is approximately 236 KiB before JavaScript/base64 overhead and is LGPL-2.1+.
-- ZBar does not provide the PDF417 coverage previously claimed by this project's README. The public format list now matches the decoder's documented capabilities.
-- `src/decoders/decodeBarcode.ts` is the engine boundary. Camera, worker, and public component code no longer depend directly on a ZBar-shaped result.
+| Goal                        | Decision                                                                                                                  |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Modern technology           | Pin ZXing-C++ 3.1.1 and Emscripten 4.0.20; build C++20 to WebAssembly.                                                    |
+| Better performance          | Compile reader-only at `-O3`, decode off the UI thread, serialize calls, and reuse a compact luminance allocation.        |
+| Modular design              | Keep camera capture, worker scheduling, engine provider, result normalization, and generated runtime in separate modules. |
+| Smart future enhancements   | Preserve an engine-neutral `BarcodeDecoder` contract and decode options for format hints and deeper detection passes.     |
+| Broad browser support       | Inline WASM in the Blob worker and test the exact worker path in Chromium, Firefox, and WebKit.                           |
+| Zero consumer configuration | Continue shipping one self-contained JS runtime with no worker or `.wasm` URL to host.                                    |
 
-## Target architecture
+## Architecture
 
-1. `useScanner` captures and sizes frames but remains decoder-agnostic.
-2. The dedicated worker owns decoder initialization and one in-flight request per scanner session.
-3. A small provider contract accepts `ImageData` and returns normalized `ScanResult` values.
-4. The default provider loads a repository-built, content-hashed WASM artifact.
-5. An optional native provider uses `BarcodeDetector` only after checking `getSupportedFormats()` for the requested formats.
-6. The worker falls back to WASM on unsupported browsers, unsupported formats, initialization errors, or native decode failure.
+1. `useScanner` owns camera lifecycle, downscaling, frame throttling, and stale-session protection.
+2. `scanner.worker.ts` owns backpressure and serializes decoder requests.
+3. `decodeBarcode.ts` is the engine-neutral public-result adapter.
+4. `BarcodeDecoder` defines the provider contract.
+5. `ZxingWasmDecoder` owns lazy initialization, buffer validation, WASM memory reuse, options, and cleanup.
+6. The generated single-file Emscripten runtime lives under `src/decoders/zxing/generated` with a checksum.
+7. `engine/wasm` and `scripts/build-barcode-engine.sh` regenerate those artifacts from locked sources.
 
-## Delivery stages
+The public `ScanResult`, component props, ref methods, camera behavior, and zero-bundler-configuration contract remain unchanged. A compatibility normalizer retains existing names such as `QRCODE`, `CODE128`, `I25`, `UPCA`, and `ISBN13` even where ZXing-C++ uses different labels or retail-code aliases.
 
-### 1. Establish parity gates
+## Build ownership and supply chain
 
-- Add licensed positive and negative image fixtures for every documented format.
-- Cover rotation, mirrored input, low contrast, blur, glare, partial framing, and multiple-code frames.
-- Record current cold-start time, warm p50/p95 decode time, memory high-water mark, and compressed package size on representative desktop, Android, and iOS browsers.
-- Add fuzz tests for malformed pixel buffers and decoder initialization failures.
+- ZXing-C++ version: `3.1.1`
+- ZXing-C++ commit: `287c85df6f961c8efbfb5ffd736cd9457b8b890e`
+- Source archive SHA-256: `97d952c661b1f79d21aacc2ec544ef05c4d1465f55692cc49622ea6a8166ca7b`
+- Emscripten: `4.0.20`
+- Container manifest digest: `sha256:460fff8f8ac87e11b16447fbd66538a686eafa0e4fb977aa0989ed19fe2079f7`
+- Writers and filesystem support: disabled
+- WebAssembly memory: grows when necessary; one single-byte luminance input allocation is reused
+- Runtime environments: browser main threads and workers; scanner decoding runs in a worker
 
-### 2. Build the first-party artifact
+Regenerate and verify:
 
-- Pin ZXing-C++ and Emscripten by immutable version and source hash.
-- Compile a reader-only build with writers, exceptions, filesystem support, and unused formats disabled where possible.
-- Keep the source lock, build container, compiler flags, checksums, SBOM, license, and reproducibility instructions in the repository.
-- Expose only allocation, decode, result-copy, and cleanup functions through a minimal C ABI.
+```bash
+npm run engine:build
+npm run engine:verify
+```
 
-### 3. Integrate behind the provider boundary
+The build downloads the exact source archive, verifies it before extraction, runs the digest-pinned toolchain, and writes only generated JavaScript artifacts plus SHA-256 checksums. Dependency information is recorded in `engine/wasm/source-lock.json` and `engine/wasm/sbom.spdx.json`. License details are in `THIRD_PARTY_NOTICES.md` and `licenses/ZXING-CPP-APACHE-2.0.txt`.
 
-- Add the new provider without changing `ScanResult` or component props.
-- Keep the current provider available behind a development-only comparison flag.
-- Run both engines against the same fixture corpus and compare normalized outputs.
-- Preserve session IDs, scanner IDs, backpressure, and transferable frame buffers.
+## Format coverage
 
-### 4. Validate before switching
+The build supports the previous ZBar set:
 
-The replacement is eligible to become the default only when:
+- QR Code
+- Code 39, Code 93, Code 128, Codabar
+- EAN-2/5/8/13, UPC-A/E, ISBN
+- ITF / ITF-14
+- GS1 DataBar variants
 
-- every documented format passes the positive/negative corpus with no unexplained parity regression;
-- p95 warm decode latency is no worse than the current engine on the reference device set, or a measured trade-off is explicitly accepted;
-- compressed package size stays within 10% of the current package unless broader format support justifies and documents the increase;
-- repeated start/stop, camera switching, multiple component instances, worker crashes, and stale responses pass automated tests;
-- Chrome, Edge, Firefox, and Safari pass desktop and mobile smoke tests;
-- accessibility, license notices, source availability, SBOM, and security review are complete.
+It also adds:
 
-### 5. Remove the npm dependency
+- Data Matrix
+- PDF417, Compact PDF417, MicroPDF417
+- Aztec and Aztec Rune
+- MaxiCode
+- Micro QR and rectangular Micro QR (rMQR)
+- Telepen, Code 32, and DX Film Edge
 
-- Delete `@undecaf/zbar-wasm`, the `zbar-inlined` resolver condition, and ZBar-specific keywords/comments.
-- Remove the comparison provider after one stable release.
-- Update the format matrix, bundle-size guidance, third-party notices, and migration notes.
+## Validation gates
 
-## Explicit non-goals
+Automated validation covers:
 
-- Do not vendor the existing npm output and call it a custom implementation. That removes package-manager visibility without improving maintenance or LGPL obligations.
-- Do not depend exclusively on the native `BarcodeDetector` API.
-- Do not expand the public component API until the provider comparison proves a consumer-facing option is necessary.
+- real independently generated QR, Code 128, Code 39, EAN-13, UPC-A, ITF, Data Matrix, PDF417, and Aztec images;
+- rotated and inverted input, explicit format filtering, blank negative frames, invalid dimensions, malformed buffers, and the 32-megapixel safety limit;
+- lazy initialization, transient initialization retry, WASM allocation reuse/growth/cleanup, result naming, worker error propagation, and serialized worker jobs;
+- all existing component, accessibility, camera cleanup, multi-instance, session, stale-result, sound, and utility regressions;
+- the self-contained Blob worker in Chromium, Firefox, and WebKit;
+- the full Chromium fake-camera path from `getUserMedia` through React and the worker to `onScan`;
+- production ESM/CJS builds, declarations, package contents, dependency audit, artifact hashes, and bundle size.
+
+Run the normal gates with:
+
+```bash
+npm run check
+npm test
+npm run test:browser
+npm run build
+npm pack --dry-run
+```
+
+### Verification snapshot (2026-08-12)
+
+| Gate                        | Verified result                                                                                    |
+| --------------------------- | -------------------------------------------------------------------------------------------------- |
+| Unit and integration tests  | 88 passed, including 19 real-image decoder cases                                                   |
+| Browser matrix              | Inline worker passed Chromium, Firefox, and WebKit; built package passed the Chromium fake camera  |
+| Dependency audit            | 0 known vulnerabilities                                                                            |
+| Engine reproducibility      | 3 fresh builds produced SHA-256 `c15e6bfc952f589cdd223949edb67d3a78040d326f26b9d112b93bb5b5758b6f` |
+| Production bundle           | ESM 461.94 kB gzip; CJS 459.00 kB gzip                                                             |
+| Package dry run             | 55 files, 963.3 kB tarball; license, source lock, SBOM, README, and migration guide included       |
+| Local warm decode benchmark | 392×392 QR, 250 scans: 0.50 ms p50, 0.58 ms p95                                                    |
+
+The timing sample was collected on an Apple Silicon development machine and is a regression reference, not a device-wide performance guarantee. Browser, Android, and iOS performance varies with hardware, camera resolution, thermal state, and barcode quality.
+
+## Browser support
+
+The decoder requires WebAssembly, Web Workers, typed arrays, and Blob URLs; live scanning additionally requires `mediaDevices.getUserMedia`, a video element, and Canvas 2D. This covers current Chromium browsers (including Edge and Android), Firefox, and Safari/WebKit (including iOS). Camera access still requires HTTPS or localhost and user permission.
+
+`BarcodeDetector` is intentionally not required. It remains a possible opt-in fast path after checking format availability, but inconsistent browser and format coverage make it unsuitable as the only decoder.
+
+## Future smart-enhancement roadmap
+
+The provider boundary supports incremental enhancements without changing the component API:
+
+The first smart enhancement is already active: two low-latency passes are followed by a deeper rotate/invert/downscale pass after misses. Further work can build on that scheduler:
+
+1. Send format hints from application configuration to reduce work when the barcode family is known.
+2. Use frame-quality scoring (motion, blur, contrast, glare) to skip low-value frames.
+3. Crop and prioritize the visible viewfinder region before a periodic full-frame pass.
+4. Track recent candidate positions for region-of-interest rescans without storing decoded payloads.
+5. Experiment with `VideoFrame`/WebCodecs and WebGPU preprocessing behind capability checks while preserving the RGBA fallback.
+6. Add multi-symbol results through a versioned opt-in API after the single-result compatibility path remains stable.
+7. Maintain a growing licensed device/camera corpus and record p50/p95 cold and warm decode metrics in CI or a dedicated benchmark lab.
+
+## Rollback
+
+The implementation is isolated behind `BarcodeDecoder`. If a release-blocking regression is discovered, a temporary provider can be substituted without changing camera or React APIs. Reintroducing the old npm package is not the preferred rollback because it restores the aging toolchain and LGPL artifact; use a pinned comparison provider only long enough to diagnose a parity gap.

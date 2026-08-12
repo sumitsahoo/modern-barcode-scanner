@@ -17,6 +17,8 @@ demo/dist
 # Test coverage
 coverage
 *.lcov
+playwright-report
+test-results
 
 # Logs and debug output
 *.log

@@ -1,33 +1,26 @@
-import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
-
-const decoderMock = vi.hoisted(() => ({
-  scanImageData: vi.fn(),
-}));
-
-vi.mock("@undecaf/zbar-wasm", () => decoderMock);
+import { describe, expect, it, vi } from "vite-plus/test";
+import type { BarcodeDecoder } from "./types";
 
 import { decodeFirstBarcode } from "./decodeBarcode";
 
 describe("decodeFirstBarcode", () => {
   const imageData = { data: new Uint8ClampedArray(4), width: 1, height: 1 } as ImageData;
 
-  beforeEach(() => decoderMock.scanImageData.mockReset());
-
   it("returns the first decoded result with a normalized type name", async () => {
-    decoderMock.scanImageData.mockResolvedValue([
-      { typeName: "ZBAR_QRCODE", decode: () => "https://example.com" },
-      { typeName: "ZBAR_CODE128", decode: () => "second" },
-    ]);
+    const decode = vi.fn(async () => ({ format: "QR Code", text: "https://example.com" }));
+    const decoder: BarcodeDecoder = {
+      decode,
+    };
 
-    await expect(decodeFirstBarcode(imageData)).resolves.toEqual({
+    await expect(decodeFirstBarcode(imageData, undefined, decoder)).resolves.toEqual({
       typeName: "QRCODE",
       scanData: "https://example.com",
     });
-    expect(decoderMock.scanImageData).toHaveBeenCalledWith(imageData);
+    expect(decode).toHaveBeenCalledWith(imageData, undefined);
   });
 
   it("returns null when no barcode is present", async () => {
-    decoderMock.scanImageData.mockResolvedValue([]);
-    await expect(decodeFirstBarcode(imageData)).resolves.toBeNull();
+    const decoder: BarcodeDecoder = { decode: vi.fn(async () => null) };
+    await expect(decodeFirstBarcode(imageData, undefined, decoder)).resolves.toBeNull();
   });
 });

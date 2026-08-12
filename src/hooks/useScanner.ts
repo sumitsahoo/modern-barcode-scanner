@@ -107,6 +107,7 @@ export const useScanner = ({
   const workerRef = useRef<Worker | null>(null);
   const activeStreamRef = useRef<MediaStream | null>(null);
   const lastScanTimeRef = useRef<number>(0);
+  const scanAttemptRef = useRef<number>(0);
   const scannerIdRef = useRef<number | null>(null);
 
   if (scannerIdRef.current === null) {
@@ -260,6 +261,7 @@ export const useScanner = ({
     const currentCameraRequest = ++cameraRequestRef.current;
     isWorkerBusy.current = false;
     lastScanTimeRef.current = 0;
+    scanAttemptRef.current = 0;
 
     setScannerState((prev) => ({
       ...prev,
@@ -382,6 +384,7 @@ export const useScanner = ({
               type: "scan",
               scannerId: scannerIdRef.current,
               sessionId: currentSession,
+              attempt: scanAttemptRef.current++,
             },
             [imageData.data.buffer],
           );

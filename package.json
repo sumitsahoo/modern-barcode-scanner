@@ -1,7 +1,7 @@
 {
   "name": "modern-barcode-scanner",
   "version": "1.0.4",
-  "description": "A high-performance barcode scanner React component with optimized detection, torch control, and camera switching",
+  "description": "A high-performance React barcode scanner with an owned WebAssembly engine and capability-aware camera controls",
   "keywords": [
     "barcode",
     "camera",
@@ -10,7 +10,8 @@
     "react",
     "scanner",
     "web-worker",
-    "zbar"
+    "webassembly",
+    "zxing"
   ],
   "homepage": "https://github.com/sumitsahoo/modern-barcode-scanner#readme",
   "bugs": {
@@ -27,8 +28,11 @@
     "!dist/assets",
     "README.md",
     "LICENSE",
+    "licenses",
     "THIRD_PARTY_NOTICES.md",
-    "docs/DECODER_MIGRATION.md"
+    "docs/DECODER_MIGRATION.md",
+    "engine/wasm/source-lock.json",
+    "engine/wasm/sbom.spdx.json"
   ],
   "type": "module",
   "sideEffects": [
@@ -55,19 +59,26 @@
     "lint": "vp lint",
     "lint:fix": "vp lint --fix",
     "check": "vp check && npm run typecheck",
-    "test": "vp test run"
-  },
-  "dependencies": {
-    "@undecaf/zbar-wasm": "^0.11.0"
+    "test": "vp test run",
+    "test:browser": "npm run build && playwright test",
+    "test:browser:serve": "vp dev --config tests/browser/vite.config.ts",
+    "engine:build": "./scripts/build-barcode-engine.sh",
+    "engine:verify": "cd src/decoders/zxing/generated && shasum -a 256 --check artifacts.sha256",
+    "fixtures:browser": "node scripts/generate-browser-fixtures.mjs"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
+    "@types/bwip-js": "3.2.3",
     "@types/node": "^26.2.0",
+    "@types/pngjs": "6.0.5",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.0.5",
+    "bwip-js": "4.11.2",
     "jsdom": "^30.0.1",
+    "pngjs": "7.0.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "typescript": "^7.0.2",

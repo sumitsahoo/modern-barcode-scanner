@@ -14,7 +14,7 @@
 
 ## ✨ Features
 
-- 🚀 **High Performance**: Web Worker-based scanning with optimized grayscale conversion.
+- 🚀 **High Performance**: A first-party, reader-only ZXing-C++ WebAssembly engine runs off the UI thread, reuses frame memory, and copies only luminance into WASM.
 - 📱 **Mobile Optimized**: Responsive camera constraints without mandatory zoom or focus settings.
 - 🔦 **Torch Control**: Shown only when the active camera reports torch support.
 - 🔄 **Camera Switching**: Shown only when multiple video inputs are available.
@@ -29,12 +29,12 @@
 
 ## 🏷️ Supported Barcode Formats
 
-- **2D Codes**: QR Code
+- **2D Codes**: QR Code, Micro QR, rMQR, Data Matrix, PDF417/MicroPDF417, Aztec, MaxiCode
 - **Retail Codes**: EAN-13, EAN-8, UPC-A, UPC-E
 - **Industrial/Standard Codes**: Code 128, Code 39, Code 93, Codabar, ITF (Interleaved 2 of 5)
-- **Books**: ISBN-10, ISBN-13
+- **Books**: Bookland ISBN-13
 - **DataBar (GS1)**
-- _And more! (Powered by ZBar)_
+- **Additional**: Telepen, Code 32, DX Film Edge, and more supported by the pinned ZXing-C++ reader build
 
 ---
 
@@ -103,13 +103,13 @@ function App() {
 
 ### Zero bundler configuration
 
-Under the hood, this library currently uses `@undecaf/zbar-wasm` 0.11 for detection, behind an internal decoder boundary and running inside a Web Worker. Both the **worker** and its **WebAssembly binary are inlined directly into the bundle** — the worker as a `Blob` and the `.wasm` as embedded data.
+Under the hood, this library uses its own pinned, reader-only ZXing-C++ WebAssembly build behind a modular decoder boundary. Both the **worker** and its **WebAssembly binary are inlined directly into the bundle** — the worker as a `Blob` and the `.wasm` inside a single-file Emscripten module.
 
 This means you do **not** need any special bundler setup: no `optimizeDeps` exclusions, no copying a worker file out of `node_modules`, and no rules to serve `.wasm` assets. Just install, import, and go — it works the same across Vite, webpack, Next.js, and other bundlers.
 
 > The trade-off is a larger main bundle (the WASM binary is embedded), in exchange for it working out of the box in any consumer with no setup.
 
-The current npm release is also the latest upstream release, but its toolchain is aging. See the [decoder migration plan](./docs/DECODER_MIGRATION.md) for the staged path to a first-party build and eventual removal of the npm dependency.
+The source lock, reproducible build, artifact checksums, SBOM, test matrix, and smart-enhancement roadmap are documented in the [first-party decoder migration](./docs/DECODER_MIGRATION.md). No `@undecaf/zbar-wasm` runtime dependency remains.
 
 ---
 
@@ -310,8 +310,8 @@ The scanner processes frames locally in the browser and does not upload camera d
 This library is built for speed and reliability:
 
 1. **Web Worker Processing**: Barcode detection runs entirely off the main thread.
-2. **Single-pass Luminance Conversion**: Converts RGBA frames once inside the worker-backed decoder path.
-3. **Frame Throttling**: Configurable `scanInterval` perfectly balances detection speed with device battery/CPU usage.
+2. **Reusable WASM Frame Memory**: Grows the decoder input allocation only when needed and reuses it across scans.
+3. **Frame Throttling**: Configurable `scanInterval` balances detection latency with device battery and CPU usage.
 4. **Session Management**: Strictly prevents processing out-of-date or stale video frames.
 5. **Smart Downscaling**: Intelligently reduces image resolution for faster processing while maintaining read quality.
 6. **Canvas Optimizations**: Utilizes `willReadFrequently` and `desynchronized` rendering hints where supported.
@@ -332,16 +332,20 @@ npm run dev
 
 ### Scripts
 
-| Script              | Description                                                       |
-| ------------------- | ----------------------------------------------------------------- |
-| `npm run dev`       | Run the demo app with hot-module reload.                          |
-| `npm run build`     | Build the library (ESM + CJS) and emit type declarations (`tsc`). |
-| `npm run preview`   | Preview a production build of the demo.                           |
-| `npm test`          | Run the test suite once (Vitest + jsdom + Testing Library).       |
-| `npm run lint`      | Lint the code with Oxlint.                                        |
-| `npm run format`    | Format the code with Oxfmt.                                       |
-| `npm run check`     | Format check + lint + type-check in a single command.             |
-| `npm run typecheck` | Type-check the library and the demo with `tsc`.                   |
+| Script                     | Description                                                                         |
+| -------------------------- | ----------------------------------------------------------------------------------- |
+| `npm run dev`              | Run the demo app with hot-module reload.                                            |
+| `npm run build`            | Build the library (ESM + CJS) and emit type declarations (`tsc`).                   |
+| `npm run preview`          | Preview a production build of the demo.                                             |
+| `npm test`                 | Run the test suite once (Vitest + jsdom + Testing Library).                         |
+| `npm run lint`             | Lint the code with Oxlint.                                                          |
+| `npm run format`           | Format the code with Oxfmt.                                                         |
+| `npm run check`            | Format check + lint + type-check in a single command.                               |
+| `npm run typecheck`        | Type-check the library and the demo with `tsc`.                                     |
+| `npm run test:browser`     | Build, then test the inline worker in Chromium, Firefox, WebKit, and a fake camera. |
+| `npm run engine:build`     | Rebuild the owned WASM engine from pinned source and toolchain inputs.              |
+| `npm run engine:verify`    | Verify checked-in decoder artifacts against their SHA-256 manifest.                 |
+| `npm run fixtures:browser` | Regenerate deterministic QR fixtures used by the browser and fake-camera tests.     |
 
 ### Demo
 
@@ -353,7 +357,7 @@ For deterministic responsive QA of the complete demo, use `?demo-state=active` t
 
 ### Testing
 
-Tests live next to the source as `*.test.ts(x)` and run under Vitest (via `vp test`) in a jsdom environment, with [`@testing-library/react`](https://testing-library.com/) for the component tests. Run the whole suite with `npm test`.
+Unit and integration tests live next to the source as `*.test.ts(x)` and run under Vitest (via `vp test`) in a jsdom environment, with [`@testing-library/react`](https://testing-library.com/) for component tests and independently generated real barcode fixtures for decoder tests. Playwright tests under `tests/browser` validate the production-style inline worker in Chromium, Firefox, and WebKit and run the built public package through the complete Chromium fake-camera pipeline. Pull requests and pushes to `dev` or `main` repeat the static, dependency, reproducible-engine, unit, browser, build, and package gates in CI. Run the primary local suites with `npm test` and `npm run test:browser`.
 
 ---
 
@@ -367,4 +371,4 @@ Please refer to the [LICENSE](./LICENSE) file for the project license and [THIRD
 
 ## 🤝 Credits
 
-- Powerful barcode detection engine powered by [ZBar WASM](https://github.com/undecaf/zbar-wasm).
+- Barcode decoding powered by this repository's pinned, reader-only [ZXing-C++](https://github.com/zxing-cpp/zxing-cpp) WebAssembly build.

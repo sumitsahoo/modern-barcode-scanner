@@ -53,4 +53,26 @@ describe("scanner worker queue", () => {
       sessionId: 1,
     });
   });
+
+  it("uses an enhanced decoding pass after two fast misses", async () => {
+    decoderMock.decodeFirstBarcode.mockResolvedValue(null);
+    self.postMessage = vi.fn();
+    const message: WorkerMessage = {
+      type: "scan",
+      scannerId: 100,
+      sessionId: 7,
+      imageData: { data: new Uint8ClampedArray(4), width: 1, height: 1 } as ImageData,
+    };
+
+    self.onmessage?.({ data: { ...message, attempt: 0 } } as MessageEvent);
+    self.onmessage?.({ data: { ...message, attempt: 1 } } as MessageEvent);
+    self.onmessage?.({ data: { ...message, attempt: 2 } } as MessageEvent);
+
+    await vi.waitFor(() => expect(decoderMock.decodeFirstBarcode).toHaveBeenCalledTimes(3));
+    expect(decoderMock.decodeFirstBarcode.mock.calls.map((call) => call[1])).toEqual([
+      { tryHarder: false },
+      { tryHarder: false },
+      { tryHarder: true },
+    ]);
+  });
 });

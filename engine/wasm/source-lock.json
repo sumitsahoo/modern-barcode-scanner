@@ -1,0 +1,14 @@
+{
+  "engine": "ZXing-C++",
+  "version": "3.1.1",
+  "commit": "287c85df6f961c8efbfb5ffd736cd9457b8b890e",
+  "sourceUrl": "https://codeload.github.com/zxing-cpp/zxing-cpp/tar.gz/287c85df6f961c8efbfb5ffd736cd9457b8b890e",
+  "sourceSha256": "97d952c661b1f79d21aacc2ec544ef05c4d1465f55692cc49622ea6a8166ca7b",
+  "license": "Apache-2.0",
+  "toolchain": {
+    "name": "Emscripten SDK",
+    "version": "4.0.20",
+    "container": "docker.io/emscripten/emsdk:4.0.20",
+    "containerDigest": "sha256:460fff8f8ac87e11b16447fbd66538a686eafa0e4fb977aa0989ed19fe2079f7"
+  }
+}

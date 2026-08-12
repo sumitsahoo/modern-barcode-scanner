@@ -19,10 +19,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "24.x"
           registry-url: "https://registry.npmjs.org"
@@ -32,13 +32,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install browser test runtimes
+        run: npx playwright install --with-deps chromium firefox webkit
+
       # Verify the exact package that will be published
       - name: Audit, test, and build
         run: |
           npm audit --audit-level=high
           npm run check
           npm test
+          npm run test:browser
+          npm run engine:verify
           npm run build
+          npm pack --dry-run
 
       # Publish using Trusted Publishing (--provenance)
       - name: Publish to npm
