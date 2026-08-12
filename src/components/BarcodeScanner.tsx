@@ -108,7 +108,11 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
     } as React.CSSProperties;
 
     return (
-      <div className={`mbs-container ${className}`} style={containerStyle}>
+      <div
+        className={`mbs-container ${className}`}
+        style={containerStyle}
+        data-scanning={isScanning}
+      >
         {/* Camera Feed */}
         <section className="mbs-video-container" aria-label="Barcode scanner viewfinder">
           <IconCameraPlaceholder className="mbs-placeholder-icon" />
@@ -120,7 +124,16 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
             playsInline
             className="mbs-video"
           />
+          {isScanning && (
+            <div className="mbs-viewfinder-frame" aria-hidden="true">
+              <span className="mbs-viewfinder-hint">Align the barcode inside the frame</span>
+            </div>
+          )}
         </section>
+
+        <span className="mbs-sr-only" role="status">
+          {isScanning ? "Barcode scanner active" : "Barcode scanner stopped"}
+        </span>
 
         {/* Hidden canvas for image processing */}
         <canvas ref={canvasRef} hidden />

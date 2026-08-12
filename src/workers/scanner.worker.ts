@@ -9,17 +9,21 @@ export interface ScanResult {
 export interface WorkerMessage {
   imageData: ImageData;
   type: "scan";
+  scannerId: number;
   sessionId: number;
 }
 
 export interface WorkerResponse {
   found: boolean;
+  scannerId: number;
   sessionId: number;
   data?: ScanResult;
   error?: string;
 }
 
-self.onmessage = async ({ data: { imageData, type, sessionId } }: MessageEvent<WorkerMessage>) => {
+self.onmessage = async ({
+  data: { imageData, type, scannerId, sessionId },
+}: MessageEvent<WorkerMessage>) => {
   if (type !== "scan") return;
 
   try {
@@ -28,6 +32,7 @@ self.onmessage = async ({ data: { imageData, type, sessionId } }: MessageEvent<W
       const result = results[0];
       self.postMessage({
         found: true,
+        scannerId,
         sessionId,
         data: {
           typeName: result.typeName?.replace("ZBAR_", "") ?? "",
@@ -35,11 +40,12 @@ self.onmessage = async ({ data: { imageData, type, sessionId } }: MessageEvent<W
         },
       } as WorkerResponse);
     } else {
-      self.postMessage({ found: false, sessionId } as WorkerResponse);
+      self.postMessage({ found: false, scannerId, sessionId } as WorkerResponse);
     }
   } catch (error) {
     self.postMessage({
       found: false,
+      scannerId,
       sessionId,
       error: error instanceof Error ? error.message : "Unknown error",
     } as WorkerResponse);

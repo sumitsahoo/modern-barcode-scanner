@@ -27,6 +27,11 @@ export default defineConfig({
   worker: {
     format: "es",
   },
+  build: {
+    // The scanner intentionally embeds its WASM runtime for zero-config use.
+    // Keep the demo build warning aligned with that documented trade-off.
+    chunkSizeWarningLimit: 900,
+  },
   server: {
     port: 8080,
     strictPort: true,

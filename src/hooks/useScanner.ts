@@ -25,6 +25,7 @@ interface UseScannerOptions extends ScannerConfig {
 let sharedWorker: Worker | null = null;
 let workerRefCount = 0;
 let terminateTimeoutId: ReturnType<typeof setTimeout> | null = null;
+let nextScannerId = 1;
 
 const getSharedWorker = (): Worker => {
   if (terminateTimeoutId) {
@@ -80,6 +81,11 @@ export const useScanner = ({
   const animationFrameId = useRef<number | null>(null);
   const workerRef = useRef<Worker | null>(null);
   const lastScanTimeRef = useRef<number>(0);
+  const scannerIdRef = useRef<number | null>(null);
+
+  if (scannerIdRef.current === null) {
+    scannerIdRef.current = nextScannerId++;
+  }
 
   // Session-based tracking
   const scanSessionRef = useRef<number>(0);
@@ -96,7 +102,7 @@ export const useScanner = ({
   const handleStopScan = useCallback(() => {
     scanSessionRef.current += 1;
 
-    if (animationFrameId.current) {
+    if (animationFrameId.current !== null) {
       cancelAnimationFrame(animationFrameId.current);
       animationFrameId.current = null;
     }
@@ -130,17 +136,25 @@ export const useScanner = ({
     workerRef.current = getSharedWorker();
 
     const handleMessage = (e: MessageEvent<WorkerResponse>) => {
-      const { found, data, sessionId } = e.data;
+      const { found, data, error, scannerId, sessionId } = e.data;
+      if (scannerId !== scannerIdRef.current) return;
+
       isWorkerBusy.current = false;
 
-      // Only process if this result belongs to current session
-      if (sessionId === scanSessionRef.current && found && data) {
+      // Only process if this result belongs to this scanner's current session.
+      if (sessionId !== scanSessionRef.current) return;
+
+      if (error) {
+        handleStopScan();
+        onError?.(new Error(error));
+      } else if (found && data) {
         handleDetectionRef.current?.(data);
       }
     };
 
     const handleError = (error: ErrorEvent) => {
       isWorkerBusy.current = false;
+      handleStopScan();
       onError?.(new Error(error.message));
     };
 
@@ -155,12 +169,23 @@ export const useScanner = ({
       }
       releaseSharedWorker();
     };
-  }, [onError]);
+  }, [handleStopScan, onError]);
 
   /**
    * Initialize and start the barcode scanning process
    */
   const handleScan = useCallback(async () => {
+    // Calling start repeatedly must replace, rather than leak, an active stream.
+    if (animationFrameId.current !== null) {
+      cancelAnimationFrame(animationFrameId.current);
+      animationFrameId.current = null;
+    }
+    if (videoRef.current?.srcObject) {
+      videoRef.current.pause();
+      stopAllTracks(videoRef.current.srcObject as MediaStream);
+      videoRef.current.srcObject = null;
+    }
+
     scanSessionRef.current += 1;
     const currentSession = scanSessionRef.current;
     isWorkerBusy.current = false;
@@ -169,6 +194,10 @@ export const useScanner = ({
     setScannerState((prev) => ({ ...prev, isScanning: true }));
 
     try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("Camera access is not supported in this browser");
+      }
+
       const mediaConstraints = await getMediaConstraints(scannerState.facingMode);
       const stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
 
@@ -201,8 +230,9 @@ export const useScanner = ({
       }
       const context = contextRef.current;
 
-      const width = videoRef.current.videoWidth;
-      const height = videoRef.current.videoHeight;
+      const videoSettings = stream.getVideoTracks()[0]?.getSettings();
+      const width = videoRef.current.videoWidth || videoSettings?.width || MAX_SCAN_DIMENSION;
+      const height = videoRef.current.videoHeight || videoSettings?.height || MAX_SCAN_DIMENSION;
 
       // Downscale for performance
       const scale = Math.min(MAX_SCAN_DIMENSION / width, MAX_SCAN_DIMENSION / height, 1);
@@ -246,9 +276,15 @@ export const useScanner = ({
           isWorkerBusy.current = true;
 
           // Send to worker with session ID for tracking
-          workerRef.current.postMessage({ imageData, type: "scan", sessionId: currentSession }, [
-            imageData.data.buffer,
-          ]);
+          workerRef.current.postMessage(
+            {
+              imageData,
+              type: "scan",
+              scannerId: scannerIdRef.current,
+              sessionId: currentSession,
+            },
+            [imageData.data.buffer],
+          );
 
           animationFrameId.current = requestAnimationFrame(scanTick);
         } catch {
@@ -340,10 +376,10 @@ export const useScanner = ({
         advanced: [{ torch: newTorchState } as unknown as MediaTrackConstraintSet],
       });
       setScannerState((prev) => ({ ...prev, isTorchOn: newTorchState }));
-    } catch {
-      // Torch toggle failed silently
+    } catch (error) {
+      onError?.(error instanceof Error ? error : new Error("Failed to toggle torch"));
     }
-  }, [scannerState.isTorchOn]);
+  }, [scannerState.isTorchOn, onError]);
 
   // Cleanup on unmount
   const handleStopScanRef = useRef(handleStopScan);

@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vite-plus/test";
 
 // The real hook spins up a Web Worker + camera stream, neither of which exists
@@ -35,5 +35,20 @@ describe("BarcodeScanner", () => {
   it("forwards a custom className onto the container", () => {
     const { container } = render(<BarcodeScanner onScan={vi.fn()} className="my-scanner" />);
     expect(container.querySelector(".mbs-container.my-scanner")).not.toBeNull();
+  });
+
+  it("announces the stopped state to assistive technology", () => {
+    render(<BarcodeScanner onScan={vi.fn()} />);
+    expect(screen.getByRole("status")).toHaveTextContent("Barcode scanner stopped");
+  });
+
+  it("shows a focused viewfinder guide while scanning", () => {
+    mockScannerApi.scannerState.isScanning = true;
+    const { container } = render(<BarcodeScanner onScan={vi.fn()} />);
+
+    expect(container.querySelector(".mbs-viewfinder-frame")).not.toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent("Barcode scanner active");
+
+    mockScannerApi.scannerState.isScanning = false;
   });
 });

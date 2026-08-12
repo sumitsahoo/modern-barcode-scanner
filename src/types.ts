@@ -2,6 +2,7 @@
  * Type definitions for Modern Barcode Scanner
  */
 
+import type { CSSProperties } from "react";
 import type { FacingMode } from "./constants/camera";
 
 /**
@@ -78,7 +79,7 @@ export interface ScannerConfig {
   /**
    * Custom styles for the scanner container
    */
-  style?: React.CSSProperties;
+  style?: CSSProperties;
   /**
    * Primary theme color for the scanner UI
    * @default '#2563EB'

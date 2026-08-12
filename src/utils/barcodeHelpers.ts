@@ -17,7 +17,8 @@ import {
  * Detect if the current device is a mobile phone or tablet
  * @returns True if device is a phone/tablet
  */
-export const isPhone = (): boolean => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+export const isPhone = (): boolean =>
+  typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 /**
  * Convert color image data to grayscale using luminosity method
@@ -50,15 +51,23 @@ export const convertToGrayscale = (imageData: ImageData): ImageData => {
  * @returns Device ID of the best rear camera or null
  */
 export const getBestRearCamera = async (): Promise<string | null> => {
+  if (
+    typeof navigator === "undefined" ||
+    !navigator.mediaDevices?.getUserMedia ||
+    !navigator.mediaDevices.enumerateDevices
+  ) {
+    return null;
+  }
+
   // Request global permissions first so device labels are populated
+  let permissionStream: MediaStream | null = null;
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    for (const track of stream.getTracks()) {
-      track.stop();
-    }
+    permissionStream = await navigator.mediaDevices.getUserMedia({ video: true });
   } catch (err) {
     console.warn("Camera permission denied or not available", err);
     return null;
+  } finally {
+    stopAllTracks(permissionStream);
   }
 
   const devices = await navigator.mediaDevices.enumerateDevices();
@@ -70,8 +79,9 @@ export const getBestRearCamera = async (): Promise<string | null> => {
   let bestScore = -1;
 
   for (const device of videoDevices) {
+    let stream: MediaStream | null = null;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      stream = await navigator.mediaDevices.getUserMedia({
         video: { deviceId: { exact: device.deviceId } },
       });
 
@@ -80,11 +90,6 @@ export const getBestRearCamera = async (): Promise<string | null> => {
         torch?: boolean;
       };
       const settings = videoTrack.getSettings();
-
-      // Stop the stream immediately
-      for (const track of stream.getTracks()) {
-        track.stop();
-      }
 
       // Skip front-facing cameras
       if (settings.facingMode === "user") continue;
@@ -134,6 +139,8 @@ export const getBestRearCamera = async (): Promise<string | null> => {
     } catch {
       // Camera not accessible, skip it
       console.warn(`Could not access camera: ${device.label}`);
+    } finally {
+      stopAllTracks(stream);
     }
   }
 
@@ -146,11 +153,21 @@ export const getBestRearCamera = async (): Promise<string | null> => {
  * @returns Cached or newly detected camera ID
  */
 export const getAndSetCameraIdWithFlash = async (): Promise<string | null> => {
-  let cameraId = localStorage.getItem(STORAGE_KEY_CAMERA_ID);
+  let cameraId: string | null = null;
+  try {
+    cameraId = localStorage.getItem(STORAGE_KEY_CAMERA_ID);
+  } catch {
+    // Storage can be blocked in private or embedded browsing contexts.
+  }
+
   if (!cameraId) {
     cameraId = await getBestRearCamera();
     if (cameraId) {
-      localStorage.setItem(STORAGE_KEY_CAMERA_ID, cameraId);
+      try {
+        localStorage.setItem(STORAGE_KEY_CAMERA_ID, cameraId);
+      } catch {
+        // Camera detection still works when the result cannot be cached.
+      }
     }
   }
   return cameraId;
@@ -165,7 +182,8 @@ export const getAndSetCameraIdWithFlash = async (): Promise<string | null> => {
 export const getMediaConstraints = async (
   facingMode: FacingMode,
 ): Promise<MediaStreamConstraints> => {
-  const baseSettings = isPhone() ? MOBILE_CAMERA_SETTINGS : DESKTOP_CAMERA_SETTINGS;
+  const isPhoneDevice = isPhone();
+  const baseSettings = isPhoneDevice ? MOBILE_CAMERA_SETTINGS : DESKTOP_CAMERA_SETTINGS;
 
   const customConstraints: MediaStreamConstraints = {
     audio: false,
@@ -178,10 +196,10 @@ export const getMediaConstraints = async (
   };
 
   // For back camera on mobile, try to use camera with flash
-  if (facingMode === FACING_MODE.ENVIRONMENT && isPhone()) {
+  if (facingMode === FACING_MODE.ENVIRONMENT && isPhoneDevice) {
     const cameraId = await getAndSetCameraIdWithFlash();
     if (cameraId && customConstraints.video && typeof customConstraints.video === "object") {
-      (customConstraints.video as MediaTrackConstraints).deviceId = cameraId;
+      (customConstraints.video as MediaTrackConstraints).deviceId = { ideal: cameraId };
     }
   }
 

@@ -21,6 +21,7 @@
 - 📷 **Smart Camera Selection**: Automatically selects the best rear camera (avoids ultra-wide/telephoto).
 - 🎯 **Session Management**: Prevents stale results with session-based tracking.
 - 🎨 **Customizable UI**: CSS-based styling with sensible defaults and CSS variables.
+- ♿ **Accessible Controls**: Keyboard focus states, reduced-motion support, live scanner status, and mobile-safe touch targets.
 - 📦 **TypeScript Support**: Full type definitions included out of the box.
 - 📳 **Haptic Feedback**: Standard [Web Vibration API](https://developer.mozilla.org/en-US/docs/Web/API/Vibration_API) support for successful scans (Android/Desktop).
 - 🔊 **Sound Feedback**: Optional audio cues on successful scans.
@@ -122,7 +123,7 @@ This means you do **not** need any special bundler setup: no `optimizeDeps` excl
 | `onScan`            | `(result: ScanResult) => void`  | **Required**    | Callback fired when a barcode is detected.                 |
 | `onError`           | `(error: Error) => void`        | `undefined`     | Callback fired when an error occurs.                       |
 | `onStateChange`     | `(state: ScannerState) => void` | `undefined`     | Callback fired when scanner state changes.                 |
-| `themeColor`        | `string`                        | `'#2563EB'`     | Primary theme color for UI elements and scan line.         |
+| `themeColor`        | `string`                        | `'#2563EB'`     | Primary color for the viewfinder, scan line, and controls. |
 | `scanInterval`      | `number`                        | `100`           | Time between scan attempts (in ms).                        |
 | `enableVibration`   | `boolean`                       | `true`          | Enable haptic feedback on scan (uses `navigator.vibrate`). |
 | `vibrationDuration` | `number`                        | `200`           | Vibration duration (in ms).                                |
@@ -222,21 +223,45 @@ const cameraId = await getBestRearCamera();
 const constraints = await getMediaConstraints("environment");
 ```
 
+`getBestRearCamera()` requests camera permission and briefly probes available video inputs to identify the best rear camera. The selected device ID is cached when browser storage is available. Prefer `getMediaConstraints()` unless you need to manage this process yourself.
+
 ---
 
 ## 🎨 Styling
 
-The component uses CSS prefix `mbs-` (Modern Barcode Scanner) and supports native CSS variables for easy theming.
+The component uses CSS prefix `mbs-` (Modern Barcode Scanner) and component-scoped CSS variables for easy theming. It fills the dimensions of its parent, so give the parent an explicit height when embedding it in a page.
+
+```tsx
+<div style={{ width: "100%", height: 480 }}>
+  <BarcodeScanner onScan={handleScan} />
+</div>
+```
 
 ### CSS Variables
 
-You can easily override the primary color globally or via the `themeColor` prop:
+Override tokens on a scanner instance (or use the `themeColor` prop for the primary accent):
 
 ```css
-:root {
-  --mbs-primary: #ff0055; /* Changes scan line and active icon colors */
+.my-scanner {
+  --mbs-primary: #ff0055;
+  --mbs-scan-color: #ff0055;
+  --mbs-bg: #fff8fb;
+  --mbs-bg-secondary: #ffeef5;
+  --mbs-control-bg: rgba(20, 10, 16, 0.68);
 }
 ```
+
+Choose accent and background colors with sufficient contrast for your application, especially when overriding the defaults.
+
+| Token                 | Default                   | Purpose                             |
+| --------------------- | ------------------------- | ----------------------------------- |
+| `--mbs-primary`       | `#2563eb`                 | Viewfinder and primary accent       |
+| `--mbs-scan-color`    | `var(--mbs-primary)`      | Animated scan line and trail        |
+| `--mbs-bg`            | `#ffffff`                 | Scanner background                  |
+| `--mbs-bg-secondary`  | `#f5f8ff`                 | Background gradient highlight       |
+| `--mbs-control-bg`    | `rgba(0, 0, 0, 0.5)`      | Camera-control toolbar background   |
+| `--mbs-control-hover` | `rgba(255, 255, 255, .2)` | Camera-control hover background     |
+| `--mbs-border`        | `rgba(37, 99, 235, .2)`   | Subtle borders and placeholder glow |
 
 ### Overriding Classes
 
@@ -262,18 +287,17 @@ You can easily override the primary color globally or via the `themeColor` prop:
 
 ---
 
-## 🌐 Browser Support
+## 🌐 Browser Requirements
 
-| Browser / OS          | Version   |
-| --------------------- | --------- |
-| 🟢 Google Chrome      | 79+       |
-| 🔵 Microsoft Edge     | 79+       |
-| 🟠 Mozilla Firefox    | 79+       |
-| 🧭 Safari (macOS)     | 14.1+     |
-| 📱 Chrome for Android | Supported |
-| 🍎 Safari on iOS      | 14.5+     |
+The scanner targets current Chrome, Edge, Firefox, and Safari releases on desktop and mobile. A browser must provide:
 
-> **⚠️ Note**: Camera access requires a secure context (**HTTPS**) in production environments!
+- `navigator.mediaDevices.getUserMedia` for camera access.
+- Web Workers, WebAssembly, Canvas, and `requestAnimationFrame`.
+- A secure context. Use **HTTPS** in production (`localhost` is allowed for local development).
+
+Camera switching, torch, vibration, and audio feedback depend on device and browser support. Unsupported optional features degrade gracefully; use `onError` to surface permission, camera, worker, and torch failures to users.
+
+The scanner processes frames locally in the browser and does not upload camera data.
 
 ---
 
@@ -292,11 +316,11 @@ This library is built for speed and reliability:
 
 ## 🧑‍💻 Development
 
-This project uses [**Vite+**](https://viteplus.dev) (`vp`) as its unified toolchain — one tool for building, testing, linting, and formatting (it bundles Vite, Vitest, Oxlint, and Oxfmt). The npm scripts invoke the locally-installed `vp` binary, so `npm install` is all you need to get going.
+This project uses [**Vite+**](https://viteplus.dev) (`vp`) as its unified toolchain — one tool for building, testing, linting, and formatting (it bundles Vite, Vitest, Oxlint, and Oxfmt). Development requires Node.js `^20.19`, `^22.18`, or `>=24.11` and npm `>=11.5.1`. The npm scripts invoke the locally installed `vp` binary.
 
 ```bash
-# Install dependencies (includes Vite+)
-npm install
+# Install the exact locked dependency graph (includes Vite+)
+npm ci
 
 # Start the live demo app at http://localhost:8080
 npm run dev
@@ -335,4 +359,4 @@ Please refer to the [LICENSE](./LICENSE) file for the full text.
 
 ## 🤝 Credits
 
-- Powerful barcode detection engine powered by [ZBar WASM](https://github.com/nickinchern/nickinchern-undecaf-zbar-wasm).
+- Powerful barcode detection engine powered by [ZBar WASM](https://github.com/undecaf/zbar-wasm).

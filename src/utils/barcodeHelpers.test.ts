@@ -22,6 +22,12 @@ describe("barcodeHelpers", () => {
       setUserAgent(ua);
       expect(isPhone()).toBe(expected);
     });
+
+    it("is safe when rendered without a browser navigator", () => {
+      vi.stubGlobal("navigator", undefined);
+      expect(isPhone()).toBe(false);
+      vi.unstubAllGlobals();
+    });
   });
 
   describe("convertToGrayscale", () => {
