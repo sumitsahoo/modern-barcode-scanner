@@ -177,7 +177,14 @@ interface ScannerState {
 If you need complete control over the UI, you can use the internal hook directly:
 
 ```tsx
-import { useScanner } from "modern-barcode-scanner";
+import {
+  IconCamera,
+  IconCameraOff,
+  IconRotateCamera,
+  IconTorchOff,
+  IconTorchOn,
+  useScanner,
+} from "modern-barcode-scanner";
 
 function CustomScanner() {
   const {
@@ -213,10 +220,23 @@ function CustomScanner() {
       <canvas ref={canvasRef} hidden />
 
       <div className="controls">
-        <button onClick={handleScan}>▶️ Start</button>
-        <button onClick={handleStopScan}>⏹️ Stop</button>
-        <button onClick={handleSwitchCamera}>🔄 Switch</button>
-        {scannerState.isTorchOn ? "🔦 On" : "🔦 Off"}
+        <button type="button" onClick={handleScan}>
+          <IconCamera /> Start
+        </button>
+        <button type="button" onClick={handleStopScan}>
+          <IconCameraOff /> Stop
+        </button>
+        {scannerState.canSwitchCamera && (
+          <button type="button" onClick={handleSwitchCamera}>
+            <IconRotateCamera /> Switch camera
+          </button>
+        )}
+        {scannerState.isTorchSupported && (
+          <button type="button" onClick={handleToggleTorch}>
+            {scannerState.isTorchOn ? <IconTorchOff /> : <IconTorchOn />}
+            {scannerState.isTorchOn ? "Turn off torch" : "Turn on torch"}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -224,6 +244,8 @@ function CustomScanner() {
 ```
 
 Attach `viewfinderRef` to the region represented by your custom guide. The hook maps that displayed rectangle through the camera video's `object-fit: cover` crop and prioritizes it for decoding; when no measurable guide is attached, it safely falls back to full-frame scanning.
+
+For custom interfaces, the package also exports `ScannerControls`, `ScanLine`, and the complete 24 px icon system: `IconCamera`, `IconCameraOff`, `IconCameraPlaceholder`, `IconRotateCamera`, `IconTorchOn`, `IconTorchOff`, `IconScanFrame`, `IconCheck`, `IconAlert`, and `IconAdjustments`. Every icon inherits `currentColor` and accepts standard React SVG props.
 
 ### Helper Utilities
 

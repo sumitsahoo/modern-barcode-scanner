@@ -352,9 +352,11 @@ button {
   width: 2rem;
   height: 2rem;
   place-items: center;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-  font: 600 var(--text-sm) / 1 var(--font-mono);
+}
+
+.demo-error-symbol svg {
+  width: 1.75rem;
+  height: 1.75rem;
 }
 
 .demo-error-copy {

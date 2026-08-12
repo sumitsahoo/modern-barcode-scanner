@@ -32,7 +32,9 @@ test("visual audit cards fit desktop and mobile viewports", async ({ page }) => 
     await page.goto("/visual.html?visual-audit");
 
     const cards = page.locator(".visual-audit-card");
+    const iconItems = page.locator(".visual-audit-icon-item");
     await expect(cards).toHaveCount(7);
+    await expect(iconItems).toHaveCount(10);
     await expectNoHorizontalOverflow(page);
 
     const cardEdges = await cards.evaluateAll((elements) =>
@@ -46,6 +48,17 @@ test("visual audit cards fit desktop and mobile viewports", async ({ page }) => 
       expect(edge.left).toBeGreaterThanOrEqual(0);
       expect(edge.right).toBeLessThanOrEqual(viewport.width);
     }
+
+    const iconStyles = await iconItems.locator("svg").evaluateAll((icons) =>
+      icons.map((icon) => ({
+        stroke: icon.getAttribute("stroke"),
+        strokeWidth: icon.getAttribute("stroke-width"),
+        viewBox: icon.getAttribute("viewBox"),
+      })),
+    );
+    expect(iconStyles).toEqual(
+      iconStyles.map(() => ({ stroke: "currentColor", strokeWidth: "1.75", viewBox: "0 0 24 24" })),
+    );
   }
 });
 
@@ -151,6 +164,43 @@ test("active scanner controls remain usable in portrait and short landscape layo
       stopButton!.y < cameraControls!.y + cameraControls!.height &&
       stopButton!.y + stopButton!.height > cameraControls!.y;
     expect(controlsOverlap).toBe(false);
+  }
+});
+
+test("viewfinder uses balanced technical brackets without leaving the viewport", async ({
+  page,
+}) => {
+  for (const viewport of [viewports.compact, viewports.landscape, viewports.desktop]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/visual.html?demo-state=active");
+
+    const metrics = await page.locator(".mbs-viewfinder-frame").evaluate((frame) => {
+      const rectangle = frame.getBoundingClientRect();
+      const frameStyles = getComputedStyle(frame);
+      const corners = getComputedStyle(frame, "::before").backgroundImage;
+      const calibrationTicks = getComputedStyle(frame, "::after").backgroundImage;
+      const scanLine = getComputedStyle(frame.querySelector(".mbs-scan-line")!);
+
+      return {
+        bottom: rectangle.bottom,
+        borderWidth: frameStyles.borderTopWidth,
+        calibrationTickCount: calibrationTicks.match(/linear-gradient/g)?.length ?? 0,
+        cornerSegmentCount: corners.match(/linear-gradient/g)?.length ?? 0,
+        left: rectangle.left,
+        right: rectangle.right,
+        scanLineHeight: scanLine.height,
+        top: rectangle.top,
+      };
+    });
+
+    expect(metrics.left).toBeGreaterThanOrEqual(0);
+    expect(metrics.top).toBeGreaterThanOrEqual(0);
+    expect(metrics.right).toBeLessThanOrEqual(viewport.width);
+    expect(metrics.bottom).toBeLessThanOrEqual(viewport.height);
+    expect(metrics.borderWidth).toBe("1px");
+    expect(metrics.cornerSegmentCount).toBe(8);
+    expect(metrics.calibrationTickCount).toBe(4);
+    expect(metrics.scanLineHeight).toBe("1px");
   }
 });
 

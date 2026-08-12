@@ -26,18 +26,13 @@ html[data-visual-audit] #root {
   margin: 0 auto var(--space-xl);
 }
 
-.visual-audit-header p,
 .visual-audit-header h1,
 .visual-audit-header span,
-.visual-audit-card h2 {
+.visual-audit-card h2,
+.visual-audit-icon-heading h2,
+.visual-audit-icon-heading span,
+.visual-audit-icon-item {
   margin: 0;
-}
-
-.visual-audit-header p {
-  color: var(--color-accent);
-  font: 600 var(--text-xs) / 1.2 var(--font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .visual-audit-header h1 {
@@ -120,6 +115,62 @@ html[data-visual-audit] #root {
     linear-gradient(145deg, var(--color-graphite-raised), var(--color-graphite));
 }
 
+.visual-audit-icon-section {
+  display: grid;
+  max-width: 76rem;
+  gap: var(--space-lg);
+  margin: var(--space-2xl) auto 0;
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--color-rule-strong);
+}
+
+.visual-audit-icon-heading {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.visual-audit-icon-heading h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+
+.visual-audit-icon-heading span {
+  max-width: 62ch;
+  color: var(--color-ink-2);
+  line-height: 1.5;
+}
+
+.visual-audit-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.visual-audit-icon-item {
+  display: grid;
+  min-width: 0;
+  min-height: 5rem;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border-top: 1px solid var(--color-rule);
+}
+
+.visual-audit-icon-item svg {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--color-accent);
+}
+
+.visual-audit-icon-item figcaption {
+  color: var(--color-ink-2);
+  font: 500 var(--text-xs) / 1.3 var(--font-mono);
+}
+
 @media (min-width: 36rem) {
   .visual-audit-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -128,10 +179,18 @@ html[data-visual-audit] #root {
   .visual-audit-stage {
     height: 20rem;
   }
+
+  .visual-audit-icon-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 @media (min-width: 62rem) {
   .visual-audit-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .visual-audit-icon-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }

@@ -1,7 +1,16 @@
-import type { CSSProperties } from "react";
+import type { ComponentType, CSSProperties, SVGProps } from "react";
 import {
   BarcodeScanner,
+  IconAlert,
+  IconAdjustments,
+  IconCamera,
+  IconCameraOff,
   IconCameraPlaceholder,
+  IconCheck,
+  IconRotateCamera,
+  IconScanFrame,
+  IconTorchOff,
+  IconTorchOn,
   ScanLine,
   ScannerControls,
 } from "modern-barcode-scanner";
@@ -61,11 +70,26 @@ const StartingPreview = () => (
   </div>
 );
 
+const iconSamples: ReadonlyArray<{
+  Icon: ComponentType<SVGProps<SVGSVGElement>>;
+  label: string;
+}> = [
+  { Icon: IconAlert, label: "Alert" },
+  { Icon: IconCamera, label: "Camera" },
+  { Icon: IconCameraOff, label: "Camera off" },
+  { Icon: IconCameraPlaceholder, label: "Camera ready" },
+  { Icon: IconRotateCamera, label: "Switch camera" },
+  { Icon: IconTorchOn, label: "Torch on" },
+  { Icon: IconTorchOff, label: "Torch off" },
+  { Icon: IconScanFrame, label: "Scan frame" },
+  { Icon: IconCheck, label: "Complete" },
+  { Icon: IconAdjustments, label: "Adjustments" },
+];
+
 function VisualAudit() {
   return (
     <main className="visual-audit-page">
       <header className="visual-audit-header">
-        <p>Rendered state matrix</p>
         <h1>Scanner interface audit</h1>
         <span>
           Camera-free fixtures for the idle, permission, active, capability, torch, and theme
@@ -111,6 +135,24 @@ function VisualAudit() {
           <ActivePreview themeColor="#B45309" showTorch={false} />
         </section>
       </div>
+
+      <section className="visual-audit-icon-section" aria-labelledby="icon-system-title">
+        <div className="visual-audit-icon-heading">
+          <h2 id="icon-system-title">Scanner icon system</h2>
+          <span>
+            One 24 × 24 grid, a 1.75px optical weight, one corner language, and state-specific
+            silhouettes.
+          </span>
+        </div>
+        <div className="visual-audit-icon-grid">
+          {iconSamples.map(({ Icon, label }) => (
+            <figure className="visual-audit-icon-item" key={label}>
+              <Icon />
+              <figcaption>{label}</figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }

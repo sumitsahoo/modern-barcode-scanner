@@ -58,6 +58,7 @@ export {
   IconCameraOff,
   IconCameraPlaceholder,
   IconCheck,
+  IconAlert,
   IconScanFrame,
   IconAdjustments,
 } from "./components";

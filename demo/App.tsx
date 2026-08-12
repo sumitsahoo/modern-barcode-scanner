@@ -8,6 +8,7 @@ import {
 } from "react";
 import {
   BarcodeScanner,
+  IconAlert,
   IconAdjustments,
   IconCamera,
   IconCameraOff,
@@ -306,7 +307,7 @@ function App({ previewState }: { previewState?: DemoPreviewState }) {
       {error && (
         <div className="demo-error" role="alert">
           <div className="demo-error-symbol" aria-hidden="true">
-            !
+            <IconAlert />
           </div>
           <div className="demo-error-copy">
             <strong>Scanning paused</strong>
