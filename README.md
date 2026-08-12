@@ -332,20 +332,20 @@ npm run dev
 
 ### Scripts
 
-| Script                     | Description                                                                         |
-| -------------------------- | ----------------------------------------------------------------------------------- |
-| `npm run dev`              | Run the demo app with hot-module reload.                                            |
-| `npm run build`            | Build the library (ESM + CJS) and emit type declarations (`tsc`).                   |
-| `npm run preview`          | Preview a production build of the demo.                                             |
-| `npm test`                 | Run the test suite once (Vitest + jsdom + Testing Library).                         |
-| `npm run lint`             | Lint the code with Oxlint.                                                          |
-| `npm run format`           | Format the code with Oxfmt.                                                         |
-| `npm run check`            | Format check + lint + type-check in a single command.                               |
-| `npm run typecheck`        | Type-check the library and the demo with `tsc`.                                     |
-| `npm run test:browser`     | Build, then test the inline worker in Chromium, Firefox, WebKit, and a fake camera. |
-| `npm run engine:build`     | Rebuild the owned WASM engine from pinned source and toolchain inputs.              |
-| `npm run engine:verify`    | Verify checked-in decoder artifacts against their SHA-256 manifest.                 |
-| `npm run fixtures:browser` | Regenerate deterministic QR fixtures used by the browser and fake-camera tests.     |
+| Script                     | Description                                                                     |
+| -------------------------- | ------------------------------------------------------------------------------- |
+| `npm run dev`              | Run the demo app with hot-module reload.                                        |
+| `npm run build`            | Build the library (ESM + CJS) and emit type declarations (`tsc`).               |
+| `npm run preview`          | Preview a production build of the demo.                                         |
+| `npm test`                 | Run the test suite once (Vitest + jsdom + Testing Library).                     |
+| `npm run lint`             | Lint the code with Oxlint.                                                      |
+| `npm run format`           | Format the code with Oxfmt.                                                     |
+| `npm run check`            | Format check + lint + type-check in a single command.                           |
+| `npm run typecheck`        | Type-check the library and the demo with `tsc`.                                 |
+| `npm run test:browser`     | Build, then test visual layouts, the worker, and a fake camera across browsers. |
+| `npm run engine:build`     | Rebuild the owned WASM engine from pinned source and toolchain inputs.          |
+| `npm run engine:verify`    | Verify checked-in decoder artifacts against their SHA-256 manifest.             |
+| `npm run fixtures:browser` | Regenerate deterministic QR fixtures used by the browser and fake-camera tests. |
 
 ### Demo
 
@@ -357,7 +357,7 @@ For deterministic responsive QA of the complete demo, use `?demo-state=active` t
 
 ### Testing
 
-Unit and integration tests live next to the source as `*.test.ts(x)` and run under Vitest (via `vp test`) in a jsdom environment, with [`@testing-library/react`](https://testing-library.com/) for component tests and independently generated real barcode fixtures for decoder tests. Playwright tests under `tests/browser` validate the production-style inline worker in Chromium, Firefox, and WebKit and run the built public package through the complete Chromium fake-camera pipeline. Pull requests and pushes to `dev` or `main` repeat the static, dependency, reproducible-engine, unit, browser, build, and package gates in CI. Run the primary local suites with `npm test` and `npm run test:browser`.
+Unit and integration tests live next to the source as `*.test.ts(x)` and run under Vitest (via `vp test`) in a jsdom environment, with [`@testing-library/react`](https://testing-library.com/) for component tests and independently generated real barcode fixtures for decoder tests. Playwright tests under `tests/browser` validate responsive desktop, portrait, compact, and short-landscape layouts; dark and reduced-motion preferences; keyboard focus containment; the production-style inline worker in Chromium, Firefox, and WebKit; and the built public package through the complete Chromium fake-camera pipeline. Pull requests and pushes to `dev` or `main` repeat the static, dependency, reproducible-engine, unit, browser, build, and package gates in CI. Run the primary local suites with `npm test` and `npm run test:browser`.
 
 ---
 

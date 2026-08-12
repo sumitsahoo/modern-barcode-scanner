@@ -330,6 +330,7 @@
 
   .mbs-scan-line-trail-down,
   .mbs-scan-line-trail-up {
+    animation: none;
     display: none;
   }
 }

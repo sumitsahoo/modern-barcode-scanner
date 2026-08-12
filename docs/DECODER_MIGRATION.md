@@ -76,6 +76,7 @@ Automated validation covers:
 - rotated and inverted input, explicit format filtering, blank negative frames, invalid dimensions, malformed buffers, and the 32-megapixel safety limit;
 - lazy initialization, transient initialization retry, WASM allocation reuse/growth/cleanup, result naming, worker error propagation, and serialized worker jobs;
 - all existing component, accessibility, camera cleanup, multi-instance, session, stale-result, sound, and utility regressions;
+- deterministic desktop, portrait, compact, and short-landscape layouts, including dark mode, reduced motion, and dialog focus containment;
 - the self-contained Blob worker in Chromium, Firefox, and WebKit;
 - the full Chromium fake-camera path from `getUserMedia` through React and the worker to `onScan`;
 - production ESM/CJS builds, declarations, package contents, dependency audit, artifact hashes, and bundle size.
@@ -95,10 +96,10 @@ npm pack --dry-run
 | Gate                        | Verified result                                                                                    |
 | --------------------------- | -------------------------------------------------------------------------------------------------- |
 | Unit and integration tests  | 88 passed, including 19 real-image decoder cases                                                   |
-| Browser matrix              | Inline worker passed Chromium, Firefox, and WebKit; built package passed the Chromium fake camera  |
+| Browser matrix              | 16 passed across responsive UI, worker, Chromium, Firefox, WebKit, and Chromium fake-camera gates  |
 | Dependency audit            | 0 known vulnerabilities                                                                            |
 | Engine reproducibility      | 3 fresh builds produced SHA-256 `c15e6bfc952f589cdd223949edb67d3a78040d326f26b9d112b93bb5b5758b6f` |
-| Production bundle           | ESM 461.94 kB gzip; CJS 459.00 kB gzip                                                             |
+| Production bundle           | ESM 461.95 kB gzip; CJS 459.01 kB gzip                                                             |
 | Package dry run             | 55 files, 963.3 kB tarball; license, source lock, SBOM, README, and migration guide included       |
 | Local warm decode benchmark | 392×392 QR, 250 scans: 0.50 ms p50, 0.58 ms p95                                                    |
 
