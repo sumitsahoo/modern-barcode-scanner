@@ -14,7 +14,7 @@
 
 ## ✨ Features
 
-- 🚀 **High Performance**: A first-party, reader-only ZXing-C++ WebAssembly engine runs off the UI thread, reuses frame memory, and copies only luminance into WASM.
+- 🚀 **High Performance**: A first-party ZXing-C++ WebAssembly engine prioritizes the visible scan region, rejects low-value frames off-thread, reuses memory, and copies only luminance into WASM.
 - 📱 **Mobile Optimized**: Responsive camera constraints without mandatory zoom or focus settings.
 - 🔦 **Torch Control**: Shown only when the active camera reports torch support.
 - 🔄 **Camera Switching**: Shown only when multiple video inputs are available.
@@ -184,6 +184,7 @@ function CustomScanner() {
     scannerState,
     videoRef,
     canvasRef,
+    viewfinderRef,
     handleScan,
     handleStopScan,
     handleSwitchCamera,
@@ -195,8 +196,20 @@ function CustomScanner() {
   });
 
   return (
-    <div>
-      <video ref={videoRef} autoPlay muted playsInline />
+    <div style={{ position: "relative", width: "100%", height: 480 }}>
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+      />
+      <div
+        ref={viewfinderRef}
+        style={{ position: "absolute", inset: "25% 10%", border: "2px solid #2563eb" }}
+      >
+        Align the barcode here
+      </div>
       <canvas ref={canvasRef} hidden />
 
       <div className="controls">
@@ -209,6 +222,8 @@ function CustomScanner() {
   );
 }
 ```
+
+Attach `viewfinderRef` to the region represented by your custom guide. The hook maps that displayed rectangle through the camera video's `object-fit: cover` crop and prioritizes it for decoding; when no measurable guide is attached, it safely falls back to full-frame scanning.
 
 ### Helper Utilities
 
@@ -310,11 +325,13 @@ The scanner processes frames locally in the browser and does not upload camera d
 This library is built for speed and reliability:
 
 1. **Web Worker Processing**: Barcode detection runs entirely off the main thread.
-2. **Reusable WASM Frame Memory**: Grows the decoder input allocation only when needed and reuses it across scans.
-3. **Frame Throttling**: Configurable `scanInterval` balances detection latency with device battery and CPU usage.
-4. **Session Management**: Strictly prevents processing out-of-date or stale video frames.
-5. **Smart Downscaling**: Intelligently reduces image resolution for faster processing while maintaining read quality.
-6. **Canvas Optimizations**: Utilizes `willReadFrequently` and `desynchronized` rendering hints where supported.
+2. **Adaptive Frame Quality**: Samples motion, blur, contrast, exposure, and glare before spending work on WASM decoding.
+3. **Viewfinder-First Detection**: Scans the smaller guided region first and restores a complete, deeper full-frame pass every fifth attempt.
+4. **Reusable WASM Frame Memory**: Grows the decoder input allocation only when needed and reuses it across scans.
+5. **Frame Throttling**: Configurable `scanInterval` balances detection latency with device battery and CPU usage.
+6. **Session Management**: Strictly prevents processing out-of-date or stale video frames.
+7. **Smart Downscaling**: Intelligently reduces image resolution for faster processing while maintaining read quality.
+8. **Canvas Optimizations**: Utilizes `willReadFrequently` and `desynchronized` rendering hints where supported.
 
 ---
 

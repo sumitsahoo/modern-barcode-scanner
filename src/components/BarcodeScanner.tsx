@@ -62,6 +62,7 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
       scannerState,
       videoRef,
       canvasRef,
+      viewfinderRef,
       handleScan,
       handleStopScan,
       handleSwitchCamera,
@@ -129,7 +130,7 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
             className="mbs-video"
           />
           {isScanning && (
-            <div className="mbs-viewfinder-frame" aria-hidden="true">
+            <div ref={viewfinderRef} className="mbs-viewfinder-frame" aria-hidden="true">
               <div className="mbs-viewfinder-viewport">
                 <ScanLine visible={showScanLine} />
               </div>

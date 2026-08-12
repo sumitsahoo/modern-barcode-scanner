@@ -50,6 +50,7 @@ const run = async () => {
       type: "scan",
       scannerId: 1,
       sessionId: 1,
+      region: "viewfinder",
       imageData: context.getImageData(0, 0, canvas.width, canvas.height),
     });
   });

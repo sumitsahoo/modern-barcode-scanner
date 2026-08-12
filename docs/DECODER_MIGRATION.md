@@ -11,7 +11,7 @@ The engine is a reader-only [ZXing-C++](https://github.com/zxing-cpp/zxing-cpp) 
 | Goal                        | Decision                                                                                                                  |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | Modern technology           | Pin ZXing-C++ 3.1.1 and Emscripten 4.0.20; build C++20 to WebAssembly.                                                    |
-| Better performance          | Compile reader-only at `-O3`, decode off the UI thread, serialize calls, and reuse a compact luminance allocation.        |
+| Better performance          | Compile reader-only at `-O3`, score frame quality off-thread, prioritize the viewfinder, and reuse luminance memory.      |
 | Modular design              | Keep camera capture, worker scheduling, engine provider, result normalization, and generated runtime in separate modules. |
 | Smart future enhancements   | Preserve an engine-neutral `BarcodeDecoder` contract and decode options for format hints and deeper detection passes.     |
 | Broad browser support       | Inline WASM in the Blob worker and test the exact worker path in Chromium, Firefox, and WebKit.                           |
@@ -19,8 +19,8 @@ The engine is a reader-only [ZXing-C++](https://github.com/zxing-cpp/zxing-cpp) 
 
 ## Architecture
 
-1. `useScanner` owns camera lifecycle, downscaling, frame throttling, and stale-session protection.
-2. `scanner.worker.ts` owns backpressure and serializes decoder requests.
+1. `useScanner` owns camera lifecycle, downscaling, frame throttling, viewfinder-to-video mapping, and periodic full-frame recovery.
+2. `scanner.worker.ts` owns backpressure, frame-quality gating, transient-failure tolerance, and serialized decoder requests.
 3. `decodeBarcode.ts` is the engine-neutral public-result adapter.
 4. `BarcodeDecoder` defines the provider contract.
 5. `ZxingWasmDecoder` owns lazy initialization, buffer validation, WASM memory reuse, options, and cleanup.
@@ -37,6 +37,7 @@ The public `ScanResult`, component props, ref methods, camera behavior, and zero
 - Emscripten: `4.0.20`
 - Container manifest digest: `sha256:460fff8f8ac87e11b16447fbd66538a686eafa0e4fb977aa0989ed19fe2079f7`
 - Writers and filesystem support: disabled
+- C++ exception catches: enabled only on the JavaScript boundary wrapper so raw Emscripten exception pointers never reach consumers
 - WebAssembly memory: grows when necessary; one single-byte luminance input allocation is reused
 - Runtime environments: browser main threads and workers; scanner decoding runs in a worker
 
@@ -75,6 +76,8 @@ Automated validation covers:
 - real independently generated QR, Code 128, Code 39, EAN-13, UPC-A, ITF, Data Matrix, PDF417, and Aztec images;
 - rotated and inverted input, explicit format filtering, blank negative frames, invalid dimensions, malformed buffers, and the 32-megapixel safety limit;
 - lazy initialization, transient initialization retry, WASM allocation reuse/growth/cleanup, result naming, worker error propagation, and serialized worker jobs;
+- motion, blur, contrast, exposure, and glare scoring against synthetic edge cases and a real QR fixture;
+- `object-fit: cover` viewfinder mapping, four focused passes per periodic full-frame recovery pass, and isolated decode-failure recovery;
 - all existing component, accessibility, camera cleanup, multi-instance, session, stale-result, sound, and utility regressions;
 - deterministic desktop, portrait, compact, and short-landscape layouts, including dark mode, reduced motion, and dialog focus containment;
 - the self-contained Blob worker in Chromium, Firefox, and WebKit;
@@ -95,12 +98,12 @@ npm pack --dry-run
 
 | Gate                        | Verified result                                                                                    |
 | --------------------------- | -------------------------------------------------------------------------------------------------- |
-| Unit and integration tests  | 88 passed, including 19 real-image decoder cases                                                   |
+| Unit and integration tests  | 102 passed, including 20 real-image and engine-exception cases                                     |
 | Browser matrix              | 16 passed across responsive UI, worker, Chromium, Firefox, WebKit, and Chromium fake-camera gates  |
 | Dependency audit            | 0 known vulnerabilities                                                                            |
-| Engine reproducibility      | 3 fresh builds produced SHA-256 `c15e6bfc952f589cdd223949edb67d3a78040d326f26b9d112b93bb5b5758b6f` |
-| Production bundle           | ESM 461.95 kB gzip; CJS 459.01 kB gzip                                                             |
-| Package dry run             | 55 files, 963.3 kB tarball; license, source lock, SBOM, README, and migration guide included       |
+| Engine reproducibility      | 3 fresh builds produced SHA-256 `4c7b8d43e6122c5c38147c5298372188ec2be7dc2bd11689f157426759b4abc3` |
+| Production bundle           | ESM 464.46 kB gzip; CJS 461.41 kB gzip                                                             |
+| Package dry run             | 59 files, 973.4 kB tarball; license, source lock, SBOM, README, and migration guide included       |
 | Local warm decode benchmark | 392×392 QR, 250 scans: 0.50 ms p50, 0.58 ms p95                                                    |
 
 The timing sample was collected on an Apple Silicon development machine and is a regression reference, not a device-wide performance guarantee. Browser, Android, and iOS performance varies with hardware, camera resolution, thermal state, and barcode quality.
@@ -111,19 +114,23 @@ The decoder requires WebAssembly, Web Workers, typed arrays, and Blob URLs; live
 
 `BarcodeDetector` is intentionally not required. It remains a possible opt-in fast path after checking format availability, but inconsistent browser and format coverage make it unsuitable as the only decoder.
 
-## Future smart-enhancement roadmap
+## Smart enhancements and roadmap
 
 The provider boundary supports incremental enhancements without changing the component API:
 
-The first smart enhancement is already active: two low-latency passes are followed by a deeper rotate/invert/downscale pass after misses. Further work can build on that scheduler:
+Three smart enhancements are active:
+
+1. Two low-latency passes are followed by a deeper rotate/invert/downscale pass after misses.
+2. A bounded luminance sampler scores motion, blur, contrast, exposure, and glare in the worker. Low-value focused frames skip WASM, while periodic full-frame recovery is never quality-gated.
+3. The visible viewfinder is mapped through `object-fit: cover` into source-camera pixels. Four smaller focused passes are followed by one complete, deeper frame pass so off-center and difficult barcodes still recover.
+
+Further work can build on that scheduler:
 
 1. Send format hints from application configuration to reduce work when the barcode family is known.
-2. Use frame-quality scoring (motion, blur, contrast, glare) to skip low-value frames.
-3. Crop and prioritize the visible viewfinder region before a periodic full-frame pass.
-4. Track recent candidate positions for region-of-interest rescans without storing decoded payloads.
-5. Experiment with `VideoFrame`/WebCodecs and WebGPU preprocessing behind capability checks while preserving the RGBA fallback.
-6. Add multi-symbol results through a versioned opt-in API after the single-result compatibility path remains stable.
-7. Maintain a growing licensed device/camera corpus and record p50/p95 cold and warm decode metrics in CI or a dedicated benchmark lab.
+2. Track recent candidate positions for region-of-interest rescans without storing decoded payloads.
+3. Experiment with `VideoFrame`/WebCodecs and WebGPU preprocessing behind capability checks while preserving the RGBA fallback.
+4. Add multi-symbol results through a versioned opt-in API after the single-result compatibility path remains stable.
+5. Maintain a growing licensed device/camera corpus and record p50/p95 cold and warm decode metrics in CI or a dedicated benchmark lab.
 
 ## Rollback
 

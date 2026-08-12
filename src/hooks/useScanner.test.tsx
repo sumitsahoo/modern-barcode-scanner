@@ -232,6 +232,110 @@ describe("useScanner shared worker routing", () => {
     vi.unstubAllGlobals();
   });
 
+  it("prioritizes the visible viewfinder and periodically restores the full frame", async () => {
+    const animationCallbacks = new Map<number, FrameRequestCallback>();
+    let nextAnimationId = 1;
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      const id = nextAnimationId++;
+      animationCallbacks.set(id, callback);
+      return id;
+    });
+    vi.stubGlobal("cancelAnimationFrame", (id: number) => animationCallbacks.delete(id));
+
+    const track = {
+      stop: vi.fn(),
+      getSettings: () => ({ width: 1920, height: 1080, facingMode: "environment" }),
+      getCapabilities: () => ({ torch: false }),
+    };
+    const stream = {
+      getTracks: () => [track],
+      getVideoTracks: () => [track],
+    } as unknown as MediaStream;
+    const originalMediaDevices = Object.getOwnPropertyDescriptor(navigator, "mediaDevices");
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        getUserMedia: vi.fn(async () => stream),
+        enumerateDevices: vi.fn(async () => [{ kind: "videoinput", deviceId: "rear" }]),
+      },
+    });
+
+    const video = {
+      srcObject: null as MediaStream | null,
+      videoWidth: 1920,
+      videoHeight: 1080,
+      play: vi.fn(async () => undefined),
+      pause: vi.fn(),
+      getBoundingClientRect: () => ({ left: 0, top: 0, width: 390, height: 844 }),
+    };
+    const drawImage = vi.fn();
+    const getImageData = vi.fn((_x: number, _y: number, width: number, height: number) => ({
+      data: new Uint8ClampedArray(width * height * 4),
+      width,
+      height,
+    }));
+    const canvas = {
+      width: 0,
+      height: 0,
+      getContext: vi.fn(() => ({ drawImage, getImageData })),
+    };
+    const hook = renderHook(() =>
+      useScanner({ onScan: vi.fn(), onError: vi.fn(), enableVibration: false, scanInterval: 0 }),
+    );
+    hook.result.current.videoRef.current = video as unknown as HTMLVideoElement;
+    hook.result.current.canvasRef.current = canvas as unknown as HTMLCanvasElement;
+    hook.result.current.viewfinderRef.current = {
+      getBoundingClientRect: () => ({ left: 16, top: 220, width: 358, height: 400 }),
+    } as HTMLDivElement;
+
+    const runLatestAnimationFrame = () => {
+      const entries = [...animationCallbacks.entries()];
+      const entry = entries[entries.length - 1];
+      if (!entry) throw new Error("No animation frame was scheduled");
+      animationCallbacks.delete(entry[0]);
+      entry[1](Date.now());
+    };
+
+    await act(async () => hook.result.current.handleScan());
+    const worker = workerHarness.instances[workerHarness.instances.length - 1];
+    const initialMessageCount = worker.postedMessages.length;
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      act(runLatestAnimationFrame);
+      const request = worker.postedMessages[initialMessageCount + attempt];
+      expect(request).toBeDefined();
+      act(() => {
+        worker.emitMessage({
+          found: false,
+          scannerId: request.scannerId,
+          sessionId: request.sessionId,
+        });
+      });
+    }
+
+    const requests = worker.postedMessages.slice(initialMessageCount);
+    expect(requests.map((request) => request.region)).toEqual([
+      "viewfinder",
+      "viewfinder",
+      "viewfinder",
+      "viewfinder",
+      "full",
+    ]);
+    expect((requests[0].imageData as ImageData).width).toBeLessThan(1280);
+    expect((requests[0].imageData as ImageData).height).toBeLessThan(720);
+    expect(requests[4].imageData).toMatchObject({ width: 1280, height: 720 });
+    expect(drawImage.mock.calls[0]).toHaveLength(9);
+    expect(drawImage.mock.calls[4]).toHaveLength(5);
+
+    hook.unmount();
+    if (originalMediaDevices) {
+      Object.defineProperty(navigator, "mediaDevices", originalMediaDevices);
+    } else {
+      Reflect.deleteProperty(navigator, "mediaDevices");
+    }
+    vi.unstubAllGlobals();
+  });
+
   it("stops and detaches the owned camera stream before reporting a detection", async () => {
     let animationCallback: FrameRequestCallback | undefined;
     vi.stubGlobal(

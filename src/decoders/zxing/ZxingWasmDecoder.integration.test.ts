@@ -130,4 +130,12 @@ describe("first-party ZXing-C++ WASM corpus", () => {
     } as ImageData;
     await expect(decodeFirstBarcode(whiteFrame, undefined, decoder)).resolves.toBeNull();
   });
+
+  it("converts C++ format exceptions into descriptive JavaScript errors", async () => {
+    const frame = await renderBarcode({ bcid: "qrcode", text: "invalid-format" });
+
+    await expect(decoder.decode(frame, { formats: ["not-a-format"] })).rejects.toThrow(
+      /^Barcode decoding failed:/,
+    );
+  });
 });

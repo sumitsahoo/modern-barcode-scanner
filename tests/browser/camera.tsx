@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { BarcodeScanner, type BarcodeScannerRef, type ScanResult } from "modern-barcode-scanner";
+import "../../dist/modern-barcode-scanner.css";
 
 interface CameraTestState {
   done: boolean;

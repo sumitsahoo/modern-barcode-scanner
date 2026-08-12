@@ -2,12 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { FacingMode } from "../constants/camera";
 import {
   CANVAS_CONTEXT_OPTIONS,
+  FULL_FRAME_SCAN_INTERVAL,
   MAX_SCAN_DIMENSION,
   SCAN_INTERVAL_MS,
   VIBRATION_DURATION_MS,
 } from "../constants/scanner";
 import type { ScannerConfig, ScannerState, ScanResult } from "../types";
 import { getMediaConstraints, playScanSound, stopAllTracks } from "../utils";
+import { getViewfinderSourceRegion } from "../utils/scanRegion";
 // The worker is inlined into the bundle (`?worker&inline`) so consumers of the
 // published library never have to resolve or copy a separate worker file —
 // it ships as a self-contained Blob inside the main JS. See GitHub issue re:
@@ -100,6 +102,7 @@ export const useScanner = ({
   // Refs for DOM elements
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const viewfinderRef = useRef<HTMLDivElement>(null);
   const contextRef = useRef<CanvasRenderingContext2D | null>(null);
 
   // Refs for scanning control
@@ -108,6 +111,7 @@ export const useScanner = ({
   const activeStreamRef = useRef<MediaStream | null>(null);
   const lastScanTimeRef = useRef<number>(0);
   const scanAttemptRef = useRef<number>(0);
+  const captureAttemptRef = useRef<number>(0);
   const scannerIdRef = useRef<number | null>(null);
 
   if (scannerIdRef.current === null) {
@@ -262,6 +266,7 @@ export const useScanner = ({
     isWorkerBusy.current = false;
     lastScanTimeRef.current = 0;
     scanAttemptRef.current = 0;
+    captureAttemptRef.current = 0;
 
     setScannerState((prev) => ({
       ...prev,
@@ -370,9 +375,40 @@ export const useScanner = ({
             return;
           }
 
-          // Draw video frame to canvas with scaling
-          context.drawImage(videoRef.current, 0, 0, scanWidth, scanHeight);
-          const imageData = context.getImageData(0, 0, scanWidth, scanHeight);
+          const captureAttempt = captureAttemptRef.current++;
+          const shouldCaptureFullFrame =
+            captureAttempt % FULL_FRAME_SCAN_INTERVAL === FULL_FRAME_SCAN_INTERVAL - 1;
+          const videoRectangle = videoRef.current.getBoundingClientRect?.();
+          const viewfinderRectangle = viewfinderRef.current?.getBoundingClientRect();
+          const sourceRegion =
+            !shouldCaptureFullFrame && videoRectangle && viewfinderRectangle
+              ? getViewfinderSourceRegion(width, height, videoRectangle, viewfinderRectangle)
+              : null;
+
+          let frameWidth = scanWidth;
+          let frameHeight = scanHeight;
+          let region: "full" | "viewfinder" = "full";
+
+          if (sourceRegion) {
+            frameWidth = Math.max(1, Math.floor(sourceRegion.width * scale));
+            frameHeight = Math.max(1, Math.floor(sourceRegion.height * scale));
+            region = "viewfinder";
+            context.drawImage(
+              videoRef.current,
+              sourceRegion.x,
+              sourceRegion.y,
+              sourceRegion.width,
+              sourceRegion.height,
+              0,
+              0,
+              frameWidth,
+              frameHeight,
+            );
+          } else {
+            context.drawImage(videoRef.current, 0, 0, scanWidth, scanHeight);
+          }
+
+          const imageData = context.getImageData(0, 0, frameWidth, frameHeight);
 
           // Mark worker as busy before sending
           isWorkerBusy.current = true;
@@ -385,6 +421,7 @@ export const useScanner = ({
               scannerId: scannerIdRef.current,
               sessionId: currentSession,
               attempt: scanAttemptRef.current++,
+              region,
             },
             [imageData.data.buffer],
           );
@@ -530,6 +567,7 @@ export const useScanner = ({
     scannerState,
     videoRef,
     canvasRef,
+    viewfinderRef,
     handleScan,
     handleStopScan,
     handleSwitchCamera,

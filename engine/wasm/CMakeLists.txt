@@ -20,7 +20,10 @@ add_subdirectory("${ZXING_CPP_SOURCE}/core" "${CMAKE_BINARY_DIR}/zxing-core")
 
 add_executable(mbs-barcode-reader BarcodeReader.cpp)
 target_link_libraries(mbs-barcode-reader PRIVATE ZXing::ZXing)
-target_compile_options(mbs-barcode-reader PRIVATE -O3)
+# Emscripten disables C++ catches during compilation unless exception support
+# is explicit. Keep the added exception tables scoped to our boundary, where
+# ZXing failures are converted to ReadResult errors, instead of every reader.
+target_compile_options(mbs-barcode-reader PRIVATE -O3 -fexceptions)
 target_link_options(
   mbs-barcode-reader
   PRIVATE
