@@ -232,6 +232,150 @@ describe("useScanner shared worker routing", () => {
     vi.unstubAllGlobals();
   });
 
+  it("stops and detaches the owned camera stream before reporting a detection", async () => {
+    let animationCallback: FrameRequestCallback | undefined;
+    vi.stubGlobal(
+      "requestAnimationFrame",
+      vi.fn((callback: FrameRequestCallback) => {
+        animationCallback = callback;
+        return 1;
+      }),
+    );
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+
+    const track = {
+      stop: vi.fn(),
+      getSettings: () => ({ width: 640, height: 480, facingMode: "environment" }),
+      getCapabilities: () => ({ torch: false }),
+    };
+    const stream = {
+      getTracks: () => [track],
+      getVideoTracks: () => [track],
+    } as unknown as MediaStream;
+    const originalMediaDevices = Object.getOwnPropertyDescriptor(navigator, "mediaDevices");
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        getUserMedia: vi.fn(async () => stream),
+        enumerateDevices: vi.fn(async () => [{ kind: "videoinput", deviceId: "rear" }]),
+      },
+    });
+
+    const video = {
+      srcObject: null as MediaStream | null,
+      videoWidth: 640,
+      videoHeight: 480,
+      play: vi.fn(async () => undefined),
+      pause: vi.fn(),
+    };
+    const canvas = {
+      width: 0,
+      height: 0,
+      getContext: vi.fn(() => ({
+        drawImage: vi.fn(),
+        getImageData: vi.fn(() => ({
+          data: new Uint8ClampedArray(640 * 480 * 4),
+          width: 640,
+          height: 480,
+        })),
+      })),
+    };
+    const cleanupObservedByCallback: Array<unknown> = [];
+    const onScan = vi.fn(() => {
+      cleanupObservedByCallback.push(track.stop.mock.calls.length, video.srcObject);
+    });
+    const hook = renderHook(() => useScanner({ onScan, onError: vi.fn(), enableVibration: false }));
+    hook.result.current.videoRef.current = video as unknown as HTMLVideoElement;
+    hook.result.current.canvasRef.current = canvas as unknown as HTMLCanvasElement;
+
+    await act(async () => hook.result.current.handleScan());
+    expect(video.srcObject).toBe(stream);
+    act(() => animationCallback?.(Date.now()));
+
+    const worker = workerHarness.instances[0];
+    const request = worker.postedMessages[worker.postedMessages.length - 1];
+    expect(request).toBeDefined();
+    act(() => {
+      worker.emitMessage({
+        found: true,
+        scannerId: request?.scannerId,
+        sessionId: request?.sessionId,
+        data: { typeName: "QRCODE", scanData: "detected" },
+      });
+    });
+
+    expect(onScan).toHaveBeenCalledWith({ typeName: "QRCODE", scanData: "detected" });
+    expect(cleanupObservedByCallback).toEqual([1, null]);
+    expect(track.stop).toHaveBeenCalledOnce();
+    expect(video.pause).toHaveBeenCalled();
+    expect(video.srcObject).toBeNull();
+    expect(hook.result.current.scannerState.isScanning).toBe(false);
+
+    hook.unmount();
+    if (originalMediaDevices) {
+      Object.defineProperty(navigator, "mediaDevices", originalMediaDevices);
+    } else {
+      Reflect.deleteProperty(navigator, "mediaDevices");
+    }
+    vi.unstubAllGlobals();
+  });
+
+  it("releases the owned stream on unmount even if the video attachment was cleared", async () => {
+    vi.stubGlobal(
+      "requestAnimationFrame",
+      vi.fn(() => 1),
+    );
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+
+    const track = {
+      stop: vi.fn(),
+      getSettings: () => ({ width: 640, height: 480, facingMode: "environment" }),
+      getCapabilities: () => ({ torch: false }),
+    };
+    const stream = {
+      getTracks: () => [track],
+      getVideoTracks: () => [track],
+    } as unknown as MediaStream;
+    const originalMediaDevices = Object.getOwnPropertyDescriptor(navigator, "mediaDevices");
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        getUserMedia: vi.fn(async () => stream),
+        enumerateDevices: vi.fn(async () => [{ kind: "videoinput", deviceId: "rear" }]),
+      },
+    });
+    const video = {
+      srcObject: null as MediaStream | null,
+      videoWidth: 640,
+      videoHeight: 480,
+      play: vi.fn(async () => undefined),
+      pause: vi.fn(),
+    };
+    const canvas = {
+      width: 0,
+      height: 0,
+      getContext: vi.fn(() => ({ drawImage: vi.fn(), getImageData: vi.fn() })),
+    };
+    const hook = renderHook(() =>
+      useScanner({ onScan: vi.fn(), onError: vi.fn(), enableVibration: false }),
+    );
+    hook.result.current.videoRef.current = video as unknown as HTMLVideoElement;
+    hook.result.current.canvasRef.current = canvas as unknown as HTMLCanvasElement;
+
+    await act(async () => hook.result.current.handleScan());
+    video.srcObject = null;
+    hook.unmount();
+
+    expect(track.stop).toHaveBeenCalledOnce();
+
+    if (originalMediaDevices) {
+      Object.defineProperty(navigator, "mediaDevices", originalMediaDevices);
+    } else {
+      Reflect.deleteProperty(navigator, "mediaDevices");
+    }
+    vi.unstubAllGlobals();
+  });
+
   it("does not let a rejected stale start stop its replacement stream", async () => {
     vi.stubGlobal(
       "requestAnimationFrame",

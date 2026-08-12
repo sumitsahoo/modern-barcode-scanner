@@ -105,6 +105,7 @@ export const useScanner = ({
   // Refs for scanning control
   const animationFrameId = useRef<number | null>(null);
   const workerRef = useRef<Worker | null>(null);
+  const activeStreamRef = useRef<MediaStream | null>(null);
   const lastScanTimeRef = useRef<number>(0);
   const scannerIdRef = useRef<number | null>(null);
 
@@ -114,6 +115,7 @@ export const useScanner = ({
 
   // Session-based tracking
   const scanSessionRef = useRef<number>(0);
+  const cameraRequestRef = useRef<number>(0);
   const isWorkerBusy = useRef<boolean>(false);
   const onErrorRef = useRef(onError);
   const onStateChangeRef = useRef(onStateChange);
@@ -131,22 +133,51 @@ export const useScanner = ({
     setScannerState((prev) => ({ ...prev, canSwitchCamera }));
   }, []);
 
+  /** Release one stream without disturbing a newer replacement stream. */
+  const releaseStream = useCallback((stream: MediaStream | null) => {
+    if (!stream) return;
+
+    if (activeStreamRef.current === stream) {
+      activeStreamRef.current = null;
+    }
+
+    if (videoRef.current?.srcObject === stream) {
+      videoRef.current.pause();
+      videoRef.current.srcObject = null;
+    }
+
+    stopAllTracks(stream);
+  }, []);
+
+  /** Release every stream currently owned or attached by this scanner. */
+  const releaseCamera = useCallback(() => {
+    const ownedStream = activeStreamRef.current;
+    const attachedStream = (videoRef.current?.srcObject as MediaStream | null) ?? null;
+    activeStreamRef.current = null;
+
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.srcObject = null;
+    }
+
+    for (const stream of new Set([ownedStream, attachedStream])) {
+      stopAllTracks(stream);
+    }
+  }, []);
+
   /**
    * Stop scanning and cleanup resources
    */
   const handleStopScan = useCallback(() => {
     scanSessionRef.current += 1;
+    cameraRequestRef.current += 1;
 
     if (animationFrameId.current !== null) {
       cancelAnimationFrame(animationFrameId.current);
       animationFrameId.current = null;
     }
 
-    if (videoRef.current) {
-      videoRef.current.pause();
-      stopAllTracks(videoRef.current.srcObject as MediaStream);
-      videoRef.current.srcObject = null;
-    }
+    releaseCamera();
 
     setScannerState((prev) => ({
       ...prev,
@@ -156,7 +187,7 @@ export const useScanner = ({
       isTorchSupported: false,
       canSwitchCamera: false,
     }));
-  }, []);
+  }, [releaseCamera]);
 
   const handleDetectionRef = useRef<((data: ScanResult) => void) | null>(null);
   handleDetectionRef.current = (data: ScanResult) => {
@@ -222,14 +253,11 @@ export const useScanner = ({
       cancelAnimationFrame(animationFrameId.current);
       animationFrameId.current = null;
     }
-    if (videoRef.current?.srcObject) {
-      videoRef.current.pause();
-      stopAllTracks(videoRef.current.srcObject as MediaStream);
-      videoRef.current.srcObject = null;
-    }
+    releaseCamera();
 
     scanSessionRef.current += 1;
     const currentSession = scanSessionRef.current;
+    const currentCameraRequest = ++cameraRequestRef.current;
     isWorkerBusy.current = false;
     lastScanTimeRef.current = 0;
 
@@ -253,26 +281,29 @@ export const useScanner = ({
       stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
 
       // Check if session is still valid
-      if (currentSession !== scanSessionRef.current) {
-        stopAllTracks(stream);
+      if (
+        currentSession !== scanSessionRef.current ||
+        currentCameraRequest !== cameraRequestRef.current
+      ) {
+        releaseStream(stream);
         return;
       }
 
       if (!videoRef.current) {
-        stopAllTracks(stream);
+        releaseStream(stream);
         throw new Error("Scanner video element is unavailable");
       }
 
+      activeStreamRef.current = stream;
       videoRef.current.srcObject = stream;
       await videoRef.current.play();
 
       // Double-check session is still valid after video starts
-      if (currentSession !== scanSessionRef.current) {
-        stopAllTracks(stream);
-        if (videoRef.current?.srcObject === stream) {
-          videoRef.current.pause();
-          videoRef.current.srcObject = null;
-        }
+      if (
+        currentSession !== scanSessionRef.current ||
+        currentCameraRequest !== cameraRequestRef.current
+      ) {
+        releaseStream(stream);
         return;
       }
 
@@ -364,14 +395,24 @@ export const useScanner = ({
 
       animationFrameId.current = requestAnimationFrame(scanTick);
     } catch (error) {
-      if (currentSession !== scanSessionRef.current) {
-        stopAllTracks(stream);
+      if (
+        currentSession !== scanSessionRef.current ||
+        currentCameraRequest !== cameraRequestRef.current
+      ) {
+        releaseStream(stream);
         return;
       }
       handleStopScan();
       onErrorRef.current?.(error instanceof Error ? error : new Error("Failed to start scanner"));
     }
-  }, [scannerState.facingMode, handleStopScan, refreshCameraAvailability, scanInterval]);
+  }, [
+    scannerState.facingMode,
+    handleStopScan,
+    refreshCameraAvailability,
+    releaseCamera,
+    releaseStream,
+    scanInterval,
+  ]);
 
   /**
    * Switch between front and back cameras
@@ -381,45 +422,49 @@ export const useScanner = ({
 
     const newFacingMode: FacingMode = scannerState.facingMode === "user" ? "environment" : "user";
     const currentSession = scanSessionRef.current;
+    const currentCameraRequest = ++cameraRequestRef.current;
 
     let stream: MediaStream | null = null;
 
     try {
-      if (videoRef.current.srcObject) {
-        stopAllTracks(videoRef.current.srcObject as MediaStream);
-        videoRef.current.srcObject = null;
-      }
+      releaseCamera();
 
       const mediaConstraints = await getMediaConstraints(newFacingMode);
 
       // Check if session is still valid after async operation
-      if (currentSession !== scanSessionRef.current) {
+      if (
+        currentSession !== scanSessionRef.current ||
+        currentCameraRequest !== cameraRequestRef.current
+      ) {
         return;
       }
 
       stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
 
       // Check again after getting stream
-      if (currentSession !== scanSessionRef.current) {
-        stopAllTracks(stream);
+      if (
+        currentSession !== scanSessionRef.current ||
+        currentCameraRequest !== cameraRequestRef.current
+      ) {
+        releaseStream(stream);
         return;
       }
 
       if (!videoRef.current) {
-        stopAllTracks(stream);
+        releaseStream(stream);
         throw new Error("Scanner video element is unavailable");
       }
 
+      activeStreamRef.current = stream;
       videoRef.current.srcObject = stream;
       await videoRef.current.play();
 
       // Final check after video starts
-      if (currentSession !== scanSessionRef.current) {
-        stopAllTracks(stream);
-        if (videoRef.current?.srcObject === stream) {
-          videoRef.current.pause();
-          videoRef.current.srcObject = null;
-        }
+      if (
+        currentSession !== scanSessionRef.current ||
+        currentCameraRequest !== cameraRequestRef.current
+      ) {
+        releaseStream(stream);
         return;
       }
 
@@ -432,14 +477,24 @@ export const useScanner = ({
       }));
       void refreshCameraAvailability(currentSession);
     } catch (error) {
-      if (currentSession !== scanSessionRef.current) {
-        stopAllTracks(stream);
+      if (
+        currentSession !== scanSessionRef.current ||
+        currentCameraRequest !== cameraRequestRef.current
+      ) {
+        releaseStream(stream);
         return;
       }
       handleStopScan();
       onErrorRef.current?.(error instanceof Error ? error : new Error("Failed to switch camera"));
     }
-  }, [scannerState.facingMode, scannerState.isScanning, handleStopScan, refreshCameraAvailability]);
+  }, [
+    scannerState.facingMode,
+    scannerState.isScanning,
+    handleStopScan,
+    refreshCameraAvailability,
+    releaseCamera,
+    releaseStream,
+  ]);
 
   /**
    * Toggle the torch/flash

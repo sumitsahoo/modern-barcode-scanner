@@ -147,19 +147,6 @@ button {
   transform: translateX(-50%);
 }
 
-.demo-app[data-scanning="true"] .demo-primary-controls {
-  right: max(1.25rem, env(safe-area-inset-right));
-  bottom: calc(1.25rem + env(safe-area-inset-bottom));
-  left: auto;
-  transform: none;
-}
-
-.demo-app[data-scanning="true"] .mbs-controls {
-  right: auto;
-  left: max(1.25rem, env(safe-area-inset-left));
-  transform: none;
-}
-
 .demo-scan-button {
   display: grid;
   width: 4.75rem;
