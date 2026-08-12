@@ -4,7 +4,14 @@ import { describe, expect, it, vi } from "vite-plus/test";
 // The real hook spins up a Web Worker + camera stream, neither of which exists
 // in jsdom. Stub it so we can assert the component's own rendering/wiring.
 const mockScannerApi = vi.hoisted(() => ({
-  scannerState: { isScanning: false, facingMode: "environment", isTorchOn: false },
+  scannerState: {
+    isStarting: false,
+    isScanning: false,
+    facingMode: "environment",
+    isTorchOn: false,
+    isTorchSupported: false,
+    canSwitchCamera: false,
+  },
   videoRef: { current: null },
   canvasRef: { current: null },
   handleScan: vi.fn(),
@@ -50,5 +57,58 @@ describe("BarcodeScanner", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Barcode scanner active");
 
     mockScannerApi.scannerState.isScanning = false;
+  });
+
+  it("announces camera startup without showing active-only controls", () => {
+    mockScannerApi.scannerState.isStarting = true;
+    const { container } = render(<BarcodeScanner onScan={vi.fn()} />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("Starting barcode scanner");
+    expect(container.querySelector(".mbs-viewfinder-frame")).toBeNull();
+    expect(screen.queryByLabelText("Switch camera")).toBeNull();
+
+    mockScannerApi.scannerState.isStarting = false;
+  });
+
+  it("shows only controls supported by the active camera", () => {
+    mockScannerApi.scannerState.isScanning = true;
+    mockScannerApi.scannerState.canSwitchCamera = true;
+    mockScannerApi.scannerState.isTorchSupported = false;
+    const { rerender } = render(<BarcodeScanner onScan={vi.fn()} />);
+
+    expect(screen.getByLabelText("Switch camera")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Turn on torch")).toBeNull();
+
+    mockScannerApi.scannerState.canSwitchCamera = false;
+    mockScannerApi.scannerState.isTorchSupported = true;
+    rerender(<BarcodeScanner onScan={vi.fn()} />);
+
+    expect(screen.queryByLabelText("Switch camera")).toBeNull();
+    expect(screen.getByLabelText("Turn on torch")).toBeInTheDocument();
+
+    mockScannerApi.scannerState.isScanning = false;
+    mockScannerApi.scannerState.isTorchSupported = false;
+  });
+
+  it("honors consumer overrides that hide optional visuals", () => {
+    mockScannerApi.scannerState.isScanning = true;
+    mockScannerApi.scannerState.canSwitchCamera = true;
+    mockScannerApi.scannerState.isTorchSupported = true;
+    const { container } = render(
+      <BarcodeScanner
+        onScan={vi.fn()}
+        showScanLine={false}
+        showCameraSwitch={false}
+        showTorchButton={false}
+      />,
+    );
+
+    expect(container.querySelector(".mbs-scan-line-container")).toBeNull();
+    expect(screen.queryByLabelText("Switch camera")).toBeNull();
+    expect(screen.queryByLabelText("Turn on torch")).toBeNull();
+
+    mockScannerApi.scannerState.isScanning = false;
+    mockScannerApi.scannerState.canSwitchCamera = false;
+    mockScannerApi.scannerState.isTorchSupported = false;
   });
 });

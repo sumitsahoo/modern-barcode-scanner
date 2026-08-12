@@ -1,0 +1,127 @@
+html[data-visual-audit],
+html[data-visual-audit] body,
+html[data-visual-audit] #root {
+  height: auto;
+  min-height: 100%;
+  overflow: auto;
+}
+
+.visual-audit-page {
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: clamp(1.25rem, 4vw, 3rem);
+  color: #172033;
+  background: #f4f6fb;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.visual-audit-header {
+  max-width: 72rem;
+  margin: 0 auto 1.5rem;
+}
+
+.visual-audit-header p,
+.visual-audit-header h1,
+.visual-audit-header span,
+.visual-audit-card h2 {
+  margin: 0;
+}
+
+.visual-audit-header p {
+  color: #63708a;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.visual-audit-header h1 {
+  margin-top: 0.35rem;
+  font-size: clamp(1.65rem, 4vw, 2.5rem);
+  letter-spacing: -0.04em;
+}
+
+.visual-audit-header span {
+  display: block;
+  margin-top: 0.35rem;
+  color: #63708a;
+  font-size: 0.9rem;
+}
+
+.visual-audit-grid {
+  display: grid;
+  max-width: 72rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0 auto;
+}
+
+.visual-audit-card {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid rgba(37, 56, 92, 0.1);
+  border-radius: 1.25rem;
+  background: white;
+  box-shadow: 0 1rem 3rem rgba(37, 56, 92, 0.07);
+}
+
+.visual-audit-card h2 {
+  padding: 0.15rem 0.25rem 0.7rem;
+  color: #4d5b74;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.visual-audit-stage {
+  position: relative;
+  width: 100%;
+  height: 20rem;
+  overflow: hidden;
+  border-radius: 0.9rem;
+}
+
+.visual-audit-stage.is-active {
+  background:
+    radial-gradient(circle at 50% 35%, rgba(75, 97, 135, 0.5), transparent 42%),
+    linear-gradient(145deg, #141b29, #050811);
+}
+
+.visual-audit-stage.is-active .mbs-placeholder-icon {
+  color: white;
+  opacity: 0.14;
+}
+
+@media (max-width: 860px) {
+  .visual-audit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .visual-audit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .visual-audit-stage {
+    height: 22rem;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .visual-audit-page {
+    color: #edf3ff;
+    background: #070b14;
+  }
+
+  .visual-audit-card {
+    border-color: rgba(255, 255, 255, 0.09);
+    background: #101725;
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.2);
+  }
+
+  .visual-audit-header p,
+  .visual-audit-header span,
+  .visual-audit-card h2 {
+    color: #aebbd1;
+  }
+}

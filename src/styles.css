@@ -64,6 +64,17 @@
   filter: drop-shadow(0 0 20px var(--mbs-border));
 }
 
+.mbs-container[data-state="starting"] .mbs-placeholder-icon {
+  animation: mbs-camera-starting 1.4s ease-in-out infinite;
+}
+
+@keyframes mbs-camera-starting {
+  50% {
+    opacity: 0.68;
+    transform: scale(1.025);
+  }
+}
+
 /* Video element */
 .mbs-video {
   width: 100%;
@@ -71,7 +82,6 @@
   object-fit: cover;
   position: relative;
   z-index: 20;
-  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.5));
 }
 
 /* Guided scan region */
@@ -120,7 +130,7 @@
 
 .mbs-viewfinder-hint {
   position: absolute;
-  top: calc(100% + 1rem);
+  bottom: calc(100% + 1rem);
   left: 50%;
   width: max-content;
   max-width: min(80vw, 22rem);
@@ -171,12 +181,16 @@
   background-color: rgba(255, 255, 255, 0.1);
   color: white;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
 }
 
-.mbs-control-btn:hover {
-  background-color: var(--mbs-control-hover);
-  transform: scale(1.05);
+@media (hover: hover) {
+  .mbs-control-btn:hover {
+    background-color: var(--mbs-control-hover);
+    transform: scale(1.05);
+  }
 }
 
 .mbs-control-btn:active {
@@ -294,14 +308,11 @@
   }
 }
 
-/* Dark theme support */
-@media (prefers-color-scheme: dark) {
-  .mbs-container {
-    background-color: #000;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
+  .mbs-container[data-state="starting"] .mbs-placeholder-icon {
+    animation: none;
+  }
+
   .mbs-control-btn {
     transition: none;
   }
@@ -314,6 +325,24 @@
   .mbs-scan-line-trail-down,
   .mbs-scan-line-trail-up {
     display: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .mbs-viewfinder-frame {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+
+  .mbs-controls {
+    border: 1px solid CanvasText;
+    background: Canvas;
+  }
+
+  .mbs-control-btn {
+    border: 1px solid ButtonText;
+    color: ButtonText;
+    background: ButtonFace;
   }
 }
 

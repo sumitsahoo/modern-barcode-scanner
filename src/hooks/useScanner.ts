@@ -52,6 +52,28 @@ const releaseSharedWorker = (): void => {
   }
 };
 
+const getTorchSupport = (stream: MediaStream): boolean => {
+  const track = stream.getVideoTracks()[0];
+
+  try {
+    const capabilities = track?.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
+    return capabilities?.torch === true;
+  } catch {
+    // Some browsers expose getCapabilities but throw for camera tracks.
+    return false;
+  }
+};
+
+const hasMultipleCameras = async (): Promise<boolean> => {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices?.();
+    return (devices?.filter((device) => device.kind === "videoinput").length ?? 0) > 1;
+  } catch {
+    // Camera switching is optional and stays hidden when enumeration fails.
+    return false;
+  }
+};
+
 /**
  * Custom hook for barcode scanning logic and camera state management
  * Handles video stream, barcode detection, and camera controls
@@ -67,9 +89,12 @@ export const useScanner = ({
   initialFacingMode = "environment",
 }: UseScannerOptions) => {
   const [scannerState, setScannerState] = useState<ScannerState>({
+    isStarting: false,
     isScanning: false,
     facingMode: initialFacingMode,
     isTorchOn: false,
+    isTorchSupported: false,
+    canSwitchCamera: false,
   });
 
   // Refs for DOM elements
@@ -90,11 +115,21 @@ export const useScanner = ({
   // Session-based tracking
   const scanSessionRef = useRef<number>(0);
   const isWorkerBusy = useRef<boolean>(false);
+  const onErrorRef = useRef(onError);
+  const onStateChangeRef = useRef(onStateChange);
+  onErrorRef.current = onError;
+  onStateChangeRef.current = onStateChange;
 
   // Notify state changes
   useEffect(() => {
-    onStateChange?.(scannerState);
-  }, [scannerState, onStateChange]);
+    onStateChangeRef.current?.(scannerState);
+  }, [scannerState]);
+
+  const refreshCameraAvailability = useCallback(async (sessionId: number) => {
+    const canSwitchCamera = await hasMultipleCameras();
+    if (sessionId !== scanSessionRef.current) return;
+    setScannerState((prev) => ({ ...prev, canSwitchCamera }));
+  }, []);
 
   /**
    * Stop scanning and cleanup resources
@@ -113,7 +148,14 @@ export const useScanner = ({
       videoRef.current.srcObject = null;
     }
 
-    setScannerState((prev) => ({ ...prev, isScanning: false, isTorchOn: false }));
+    setScannerState((prev) => ({
+      ...prev,
+      isStarting: false,
+      isScanning: false,
+      isTorchOn: false,
+      isTorchSupported: false,
+      canSwitchCamera: false,
+    }));
   }, []);
 
   const handleDetectionRef = useRef<((data: ScanResult) => void) | null>(null);
@@ -139,14 +181,14 @@ export const useScanner = ({
       const { found, data, error, scannerId, sessionId } = e.data;
       if (scannerId !== scannerIdRef.current) return;
 
-      isWorkerBusy.current = false;
-
       // Only process if this result belongs to this scanner's current session.
       if (sessionId !== scanSessionRef.current) return;
 
+      isWorkerBusy.current = false;
+
       if (error) {
         handleStopScan();
-        onError?.(new Error(error));
+        onErrorRef.current?.(new Error(error));
       } else if (found && data) {
         handleDetectionRef.current?.(data);
       }
@@ -155,7 +197,7 @@ export const useScanner = ({
     const handleError = (error: ErrorEvent) => {
       isWorkerBusy.current = false;
       handleStopScan();
-      onError?.(new Error(error.message));
+      onErrorRef.current?.(new Error(error.message));
     };
 
     workerRef.current.addEventListener("message", handleMessage);
@@ -169,7 +211,7 @@ export const useScanner = ({
       }
       releaseSharedWorker();
     };
-  }, [handleStopScan, onError]);
+  }, [handleStopScan]);
 
   /**
    * Initialize and start the barcode scanning process
@@ -191,7 +233,16 @@ export const useScanner = ({
     isWorkerBusy.current = false;
     lastScanTimeRef.current = 0;
 
-    setScannerState((prev) => ({ ...prev, isScanning: true }));
+    setScannerState((prev) => ({
+      ...prev,
+      isStarting: true,
+      isScanning: false,
+      isTorchOn: false,
+      isTorchSupported: false,
+      canSwitchCamera: false,
+    }));
+
+    let stream: MediaStream | null = null;
 
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
@@ -199,7 +250,7 @@ export const useScanner = ({
       }
 
       const mediaConstraints = await getMediaConstraints(scannerState.facingMode);
-      const stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+      stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
 
       // Check if session is still valid
       if (currentSession !== scanSessionRef.current) {
@@ -209,7 +260,7 @@ export const useScanner = ({
 
       if (!videoRef.current) {
         stopAllTracks(stream);
-        return;
+        throw new Error("Scanner video element is unavailable");
       }
 
       videoRef.current.srcObject = stream;
@@ -217,18 +268,36 @@ export const useScanner = ({
 
       // Double-check session is still valid after video starts
       if (currentSession !== scanSessionRef.current) {
-        handleStopScan();
+        stopAllTracks(stream);
+        if (videoRef.current?.srcObject === stream) {
+          videoRef.current.pause();
+          videoRef.current.srcObject = null;
+        }
         return;
       }
 
       const canvas = canvasRef.current;
-      if (!canvas) return;
+      if (!canvas) {
+        throw new Error("Scanner canvas is unavailable");
+      }
 
       // Reuse context for better performance
       if (!contextRef.current) {
         contextRef.current = canvas.getContext("2d", CANVAS_CONTEXT_OPTIONS);
       }
       const context = contextRef.current;
+      if (!context) {
+        throw new Error("Canvas image processing is not supported in this browser");
+      }
+
+      const isTorchSupported = getTorchSupport(stream);
+      setScannerState((prev) => ({
+        ...prev,
+        isStarting: false,
+        isScanning: true,
+        isTorchSupported,
+      }));
+      void refreshCameraAvailability(currentSession);
 
       const videoSettings = stream.getVideoTracks()[0]?.getSettings();
       const width = videoRef.current.videoWidth || videoSettings?.width || MAX_SCAN_DIMENSION;
@@ -295,10 +364,14 @@ export const useScanner = ({
 
       animationFrameId.current = requestAnimationFrame(scanTick);
     } catch (error) {
+      if (currentSession !== scanSessionRef.current) {
+        stopAllTracks(stream);
+        return;
+      }
       handleStopScan();
-      onError?.(error instanceof Error ? error : new Error("Failed to start scanner"));
+      onErrorRef.current?.(error instanceof Error ? error : new Error("Failed to start scanner"));
     }
-  }, [scannerState.facingMode, handleStopScan, scanInterval, onError]);
+  }, [scannerState.facingMode, handleStopScan, refreshCameraAvailability, scanInterval]);
 
   /**
    * Switch between front and back cameras
@@ -309,9 +382,12 @@ export const useScanner = ({
     const newFacingMode: FacingMode = scannerState.facingMode === "user" ? "environment" : "user";
     const currentSession = scanSessionRef.current;
 
+    let stream: MediaStream | null = null;
+
     try {
       if (videoRef.current.srcObject) {
         stopAllTracks(videoRef.current.srcObject as MediaStream);
+        videoRef.current.srcObject = null;
       }
 
       const mediaConstraints = await getMediaConstraints(newFacingMode);
@@ -321,7 +397,7 @@ export const useScanner = ({
         return;
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+      stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
 
       // Check again after getting stream
       if (currentSession !== scanSessionRef.current) {
@@ -331,7 +407,7 @@ export const useScanner = ({
 
       if (!videoRef.current) {
         stopAllTracks(stream);
-        return;
+        throw new Error("Scanner video element is unavailable");
       }
 
       videoRef.current.srcObject = stream;
@@ -339,37 +415,42 @@ export const useScanner = ({
 
       // Final check after video starts
       if (currentSession !== scanSessionRef.current) {
-        handleStopScan();
+        stopAllTracks(stream);
+        if (videoRef.current?.srcObject === stream) {
+          videoRef.current.pause();
+          videoRef.current.srcObject = null;
+        }
         return;
       }
 
-      const canvas = canvasRef.current;
-      if (canvas) {
-        canvas.width = videoRef.current.videoWidth;
-        canvas.height = videoRef.current.videoHeight;
-      }
-
+      const isTorchSupported = getTorchSupport(stream);
       setScannerState((prev) => ({
         ...prev,
         facingMode: newFacingMode,
         isTorchOn: false,
+        isTorchSupported,
       }));
+      void refreshCameraAvailability(currentSession);
     } catch (error) {
+      if (currentSession !== scanSessionRef.current) {
+        stopAllTracks(stream);
+        return;
+      }
       handleStopScan();
-      onError?.(error instanceof Error ? error : new Error("Failed to switch camera"));
+      onErrorRef.current?.(error instanceof Error ? error : new Error("Failed to switch camera"));
     }
-  }, [scannerState.facingMode, scannerState.isScanning, handleStopScan, onError]);
+  }, [scannerState.facingMode, scannerState.isScanning, handleStopScan, refreshCameraAvailability]);
 
   /**
    * Toggle the torch/flash
    */
   const handleToggleTorch = useCallback(async () => {
-    const track = (videoRef.current?.srcObject as MediaStream)?.getVideoTracks()?.[0];
-    const capabilities = track?.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
-    if (!capabilities?.torch) return;
-
-    const newTorchState = !scannerState.isTorchOn;
     try {
+      const track = (videoRef.current?.srcObject as MediaStream)?.getVideoTracks()?.[0];
+      const capabilities = track?.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
+      if (!track || !capabilities?.torch) return;
+
+      const newTorchState = !scannerState.isTorchOn;
       // Using type assertion for torch constraint which is not in standard TypeScript definitions
       // but is supported by Chrome and other browsers
       await track.applyConstraints({
@@ -377,9 +458,9 @@ export const useScanner = ({
       });
       setScannerState((prev) => ({ ...prev, isTorchOn: newTorchState }));
     } catch (error) {
-      onError?.(error instanceof Error ? error : new Error("Failed to toggle torch"));
+      onErrorRef.current?.(error instanceof Error ? error : new Error("Failed to toggle torch"));
     }
-  }, [scannerState.isTorchOn, onError]);
+  }, [scannerState.isTorchOn]);
 
   // Cleanup on unmount
   const handleStopScanRef = useRef(handleStopScan);

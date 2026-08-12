@@ -6,11 +6,8 @@
 import {
   CAMERA_DEFAULTS,
   DESKTOP_CAMERA_SETTINGS,
-  FACING_MODE,
   type FacingMode,
   MOBILE_CAMERA_SETTINGS,
-  STORAGE_KEY_CAMERA_ID,
-  ZOOM_LEVELS,
 } from "../constants/camera";
 
 /**
@@ -148,32 +145,6 @@ export const getBestRearCamera = async (): Promise<string | null> => {
 };
 
 /**
- * Get best rear camera ID from localStorage or detect it
- * Caches the result in localStorage for future use
- * @returns Cached or newly detected camera ID
- */
-export const getAndSetCameraIdWithFlash = async (): Promise<string | null> => {
-  let cameraId: string | null = null;
-  try {
-    cameraId = localStorage.getItem(STORAGE_KEY_CAMERA_ID);
-  } catch {
-    // Storage can be blocked in private or embedded browsing contexts.
-  }
-
-  if (!cameraId) {
-    cameraId = await getBestRearCamera();
-    if (cameraId) {
-      try {
-        localStorage.setItem(STORAGE_KEY_CAMERA_ID, cameraId);
-      } catch {
-        // Camera detection still works when the result cannot be cached.
-      }
-    }
-  }
-  return cameraId;
-};
-
-/**
  * Get optimized media constraints for camera access
  * Automatically adjusts settings based on device type and facing mode
  * @param facingMode - Camera facing mode ('user' or 'environment')
@@ -190,18 +161,9 @@ export const getMediaConstraints = async (
     video: {
       ...baseSettings,
       ...CAMERA_DEFAULTS,
-      facingMode,
-      zoom: facingMode === FACING_MODE.USER ? ZOOM_LEVELS.FRONT : ZOOM_LEVELS.BACK,
-    } as MediaTrackConstraints,
+      facingMode: { ideal: facingMode },
+    },
   };
-
-  // For back camera on mobile, try to use camera with flash
-  if (facingMode === FACING_MODE.ENVIRONMENT && isPhoneDevice) {
-    const cameraId = await getAndSetCameraIdWithFlash();
-    if (cameraId && customConstraints.video && typeof customConstraints.video === "object") {
-      (customConstraints.video as MediaTrackConstraints).deviceId = { ideal: cameraId };
-    }
-  }
 
   return customConstraints;
 };

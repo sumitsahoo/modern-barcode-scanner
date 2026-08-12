@@ -2,7 +2,6 @@ import { forwardRef, useEffect, useImperativeHandle } from "react";
 import { useScanner } from "../hooks/useScanner";
 import { SCANNER_THEME } from "../constants/theme";
 import type { BarcodeScannerProps, BarcodeScannerRef, ScannerState } from "../types";
-import { isPhone } from "../utils/barcodeHelpers";
 import { IconCameraPlaceholder } from "./Icons";
 import ScanLine from "./ScanLine";
 import ScannerControls from "./ScannerControls";
@@ -11,7 +10,7 @@ import ScannerControls from "./ScannerControls";
  * BarcodeScanner Component
  *
  * A high-performance barcode scanner React component with optimized detection.
- * Supports camera switching, torch control, and automatic phone detection.
+ * Supports capability-aware camera switching and torch control.
  *
  * @example
  * ```tsx
@@ -78,8 +77,8 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
       initialFacingMode,
     });
 
-    const { isScanning, facingMode, isTorchOn } = scannerState;
-    const isPhoneDevice = isPhone();
+    const { isStarting, isScanning, facingMode, isTorchOn, isTorchSupported, canSwitchCamera } =
+      scannerState;
 
     // Expose imperative methods via ref
     useImperativeHandle(
@@ -112,9 +111,14 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
         className={`mbs-container ${className}`}
         style={containerStyle}
         data-scanning={isScanning}
+        data-state={isStarting ? "starting" : isScanning ? "scanning" : "stopped"}
       >
         {/* Camera Feed */}
-        <section className="mbs-video-container" aria-label="Barcode scanner viewfinder">
+        <section
+          className="mbs-video-container"
+          aria-label="Barcode scanner viewfinder"
+          aria-busy={isStarting}
+        >
           <IconCameraPlaceholder className="mbs-placeholder-icon" />
           <video
             title="Barcode Scanner"
@@ -132,7 +136,11 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
         </section>
 
         <span className="mbs-sr-only" role="status">
-          {isScanning ? "Barcode scanner active" : "Barcode scanner stopped"}
+          {isStarting
+            ? "Starting barcode scanner"
+            : isScanning
+              ? "Barcode scanner active"
+              : "Barcode scanner stopped"}
         </span>
 
         {/* Hidden canvas for image processing */}
@@ -145,9 +153,9 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
         <ScannerControls
           isScanning={isScanning}
           isTorchOn={isTorchOn}
-          shouldShowRotateButton={showCameraSwitch && isScanning && isPhoneDevice}
+          shouldShowRotateButton={showCameraSwitch && isScanning && canSwitchCamera}
           shouldShowTorchButton={
-            showTorchButton && isScanning && isPhoneDevice && facingMode === "environment"
+            showTorchButton && isScanning && isTorchSupported && facingMode === "environment"
           }
           onSwitchCamera={handleSwitchCamera}
           onToggleTorch={handleToggleTorch}

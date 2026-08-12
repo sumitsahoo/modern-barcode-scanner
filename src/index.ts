@@ -2,7 +2,7 @@
  * Modern Barcode Scanner
  *
  * A high-performance barcode scanner React component with optimized detection,
- * camera switching, torch control, and automatic phone detection.
+ * capability-aware camera switching and torch control.
  *
  * @packageDocumentation
  */

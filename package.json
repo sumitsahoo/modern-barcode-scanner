@@ -26,7 +26,9 @@
     "dist",
     "!dist/assets",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "docs/DECODER_MIGRATION.md"
   ],
   "type": "module",
   "sideEffects": [

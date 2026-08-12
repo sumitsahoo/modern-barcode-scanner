@@ -83,8 +83,6 @@ describe("barcodeHelpers", () => {
   });
 
   describe("getMediaConstraints", () => {
-    // jsdom's default user agent is not a phone, so the flash-camera lookup
-    // (which needs mediaDevices) is skipped and the result is deterministic.
     it("never requests audio", async () => {
       const constraints = await getMediaConstraints(FACING_MODE.ENVIRONMENT);
       expect(constraints.audio).toBe(false);
@@ -92,18 +90,17 @@ describe("barcodeHelpers", () => {
 
     it("applies the requested facing mode and desktop resolution", async () => {
       const constraints = await getMediaConstraints(FACING_MODE.ENVIRONMENT);
-      const video = constraints.video as MediaTrackConstraints & { zoom?: number };
-      expect(video.facingMode).toBe("environment");
+      const video = constraints.video as MediaTrackConstraints;
+      expect(video.facingMode).toEqual({ ideal: "environment" });
       expect(video.width).toEqual({ ideal: 1280 });
-      // Back camera zooms in by default.
-      expect(video.zoom).toBe(2);
+      expect(video).not.toHaveProperty("zoom");
+      expect(video).not.toHaveProperty("focusDistance");
     });
 
-    it("uses the front zoom level for the user-facing camera", async () => {
+    it("uses a non-mandatory user-facing camera preference", async () => {
       const constraints = await getMediaConstraints(FACING_MODE.USER);
-      const video = constraints.video as MediaTrackConstraints & { zoom?: number };
-      expect(video.facingMode).toBe("user");
-      expect(video.zoom).toBe(1);
+      const video = constraints.video as MediaTrackConstraints;
+      expect(video.facingMode).toEqual({ ideal: "user" });
     });
   });
 });

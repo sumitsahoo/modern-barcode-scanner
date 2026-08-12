@@ -1,6 +1,6 @@
 <div align="center">
   <h1>📷 Modern Barcode Scanner</h1>
-  <p>A high-performance barcode scanner React component with optimized detection, camera switching, torch control, and automatic phone detection.</p>
+  <p>A high-performance barcode scanner React component with optimized detection and capability-aware camera controls.</p>
 
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/sumitsahoo/modern-barcode-scanner/publish.yml)
 ![NPM Version](https://img.shields.io/npm/v/modern-barcode-scanner)
@@ -15,10 +15,9 @@
 ## ✨ Features
 
 - 🚀 **High Performance**: Web Worker-based scanning with optimized grayscale conversion.
-- 📱 **Mobile Optimized**: Automatic phone detection with appropriate camera selection.
-- 🔦 **Torch Control**: Built-in torch/flash support for low-light scanning.
-- 🔄 **Camera Switching**: Easy switching between front and back cameras.
-- 📷 **Smart Camera Selection**: Automatically selects the best rear camera (avoids ultra-wide/telephoto).
+- 📱 **Mobile Optimized**: Responsive camera constraints without mandatory zoom or focus settings.
+- 🔦 **Torch Control**: Shown only when the active camera reports torch support.
+- 🔄 **Camera Switching**: Shown only when multiple video inputs are available.
 - 🎯 **Session Management**: Prevents stale results with session-based tracking.
 - 🎨 **Customizable UI**: CSS-based styling with sensible defaults and CSS variables.
 - ♿ **Accessible Controls**: Keyboard focus states, reduced-motion support, live scanner status, and mobile-safe touch targets.
@@ -30,7 +29,7 @@
 
 ## 🏷️ Supported Barcode Formats
 
-- **2D Codes**: QR Code, PDF417
+- **2D Codes**: QR Code
 - **Retail Codes**: EAN-13, EAN-8, UPC-A, UPC-E
 - **Industrial/Standard Codes**: Code 128, Code 39, Code 93, Codabar, ITF (Interleaved 2 of 5)
 - **Books**: ISBN-10, ISBN-13
@@ -104,11 +103,13 @@ function App() {
 
 ### Zero bundler configuration
 
-Under the hood, this library uses `@undecaf/zbar-wasm` for detection, running inside a Web Worker. Both the **worker** and its **WebAssembly binary are inlined directly into the bundle** — the worker as a `Blob` and the `.wasm` as embedded data.
+Under the hood, this library currently uses `@undecaf/zbar-wasm` 0.11 for detection, behind an internal decoder boundary and running inside a Web Worker. Both the **worker** and its **WebAssembly binary are inlined directly into the bundle** — the worker as a `Blob` and the `.wasm` as embedded data.
 
 This means you do **not** need any special bundler setup: no `optimizeDeps` exclusions, no copying a worker file out of `node_modules`, and no rules to serve `.wasm` assets. Just install, import, and go — it works the same across Vite, webpack, Next.js, and other bundlers.
 
 > The trade-off is a larger main bundle (the WASM binary is embedded), in exchange for it working out of the box in any consumer with no setup.
+
+The current npm release is also the latest upstream release, but its toolchain is aging. See the [decoder migration plan](./docs/DECODER_MIGRATION.md) for the staged path to a first-party build and eventual removal of the npm dependency.
 
 ---
 
@@ -158,9 +159,12 @@ interface ScanResult {
 }
 
 interface ScannerState {
+  isStarting: boolean;
   isScanning: boolean;
   facingMode: "user" | "environment";
   isTorchOn: boolean;
+  isTorchSupported: boolean;
+  canSwitchCamera: boolean;
 }
 ```
 
@@ -223,7 +227,7 @@ const cameraId = await getBestRearCamera();
 const constraints = await getMediaConstraints("environment");
 ```
 
-`getBestRearCamera()` requests camera permission and briefly probes available video inputs to identify the best rear camera. The selected device ID is cached when browser storage is available. Prefer `getMediaConstraints()` unless you need to manage this process yourself.
+`getBestRearCamera()` requests camera permission and probes available video inputs to identify the best rear camera. This can open each camera briefly, so it is an explicit advanced helper rather than part of the default startup path. `getMediaConstraints()` uses non-mandatory facing and resolution preferences for faster, more resilient startup.
 
 ---
 
@@ -306,7 +310,7 @@ The scanner processes frames locally in the browser and does not upload camera d
 This library is built for speed and reliability:
 
 1. **Web Worker Processing**: Barcode detection runs entirely off the main thread.
-2. **Grayscale Conversion**: Uses bitwise operations for incredibly fast image matrix processing.
+2. **Single-pass Luminance Conversion**: Converts RGBA frames once inside the worker-backed decoder path.
 3. **Frame Throttling**: Configurable `scanInterval` perfectly balances detection speed with device battery/CPU usage.
 4. **Session Management**: Strictly prevents processing out-of-date or stale video frames.
 5. **Smart Downscaling**: Intelligently reduces image resolution for faster processing while maintaining read quality.
@@ -343,6 +347,8 @@ npm run dev
 
 The `demo/` app consumes the library the same way a published consumer does — importing it by package name (`modern-barcode-scanner`) and stylesheet (`modern-barcode-scanner/styles.css`) against its public API. Aliases in `demo/vite.config.ts` resolve those entry points to the local build during development, keeping the demo live-reloading while validating the real package surface.
 
+Append `?visual-audit` to the local demo URL to open the camera-free core component audit page. It renders the real package CSS and exported controls across idle, starting, active, capability-limited, custom-theme, and compact layouts, and it respects light/dark preferences without requesting camera permission.
+
 ### Testing
 
 Tests live next to the source as `*.test.ts(x)` and run under Vitest (via `vp test`) in a jsdom environment, with [`@testing-library/react`](https://testing-library.com/) for the component tests. Run the whole suite with `npm test`.
@@ -353,7 +359,7 @@ Tests live next to the source as `*.test.ts(x)` and run under Vitest (via `vp te
 
 MIT © [Sumit Sahoo](https://github.com/sumitsahoo)
 
-Please refer to the [LICENSE](./LICENSE) file for the full text.
+Please refer to the [LICENSE](./LICENSE) file for the project license and [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) for the bundled decoder notice.
 
 ---
 

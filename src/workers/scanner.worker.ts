@@ -1,5 +1,4 @@
-import { scanImageData } from "@undecaf/zbar-wasm";
-import { convertToGrayscale } from "../utils/barcodeHelpers";
+import { decodeFirstBarcode } from "../decoders/decodeBarcode";
 
 export interface ScanResult {
   typeName: string;
@@ -21,23 +20,17 @@ export interface WorkerResponse {
   error?: string;
 }
 
-self.onmessage = async ({
-  data: { imageData, type, scannerId, sessionId },
-}: MessageEvent<WorkerMessage>) => {
+const processScan = async ({ imageData, type, scannerId, sessionId }: WorkerMessage) => {
   if (type !== "scan") return;
 
   try {
-    const results = await scanImageData(convertToGrayscale(imageData));
-    if (results.length > 0) {
-      const result = results[0];
+    const result = await decodeFirstBarcode(imageData);
+    if (result) {
       self.postMessage({
         found: true,
         scannerId,
         sessionId,
-        data: {
-          typeName: result.typeName?.replace("ZBAR_", "") ?? "",
-          scanData: result.decode() ?? "",
-        },
+        data: result,
       } as WorkerResponse);
     } else {
       self.postMessage({ found: false, scannerId, sessionId } as WorkerResponse);
@@ -50,4 +43,15 @@ self.onmessage = async ({
       error: error instanceof Error ? error.message : "Unknown error",
     } as WorkerResponse);
   }
+};
+
+// A single worker is shared across component instances. Serialize jobs so the
+// decoder's shared WASM scanner is never entered concurrently.
+let decodeQueue = Promise.resolve();
+
+self.onmessage = ({ data }: MessageEvent<WorkerMessage>) => {
+  decodeQueue = decodeQueue.then(
+    () => processScan(data),
+    () => processScan(data),
+  );
 };

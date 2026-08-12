@@ -46,7 +46,9 @@ const getReadableAccentText = (hexColor: string) => {
     .map((channel) => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4))
     .reduce((total, channel, index) => total + channel * [0.2126, 0.7152, 0.0722][index], 0);
 
-  return luminance > 0.22 ? "#101827" : "#ffffff";
+  // Black/white with this crossover guarantees at least 4.5:1 contrast for
+  // arbitrary colors selected through the native picker.
+  return luminance > 0.179 ? "#000000" : "#ffffff";
 };
 
 function App() {
@@ -59,6 +61,8 @@ function App() {
   const [themeColor, setThemeColor] = useState("#2563EB");
 
   const isScanning = state?.isScanning ?? false;
+  const isStarting = state?.isStarting ?? false;
+  const isActive = isStarting || isScanning;
   const appStyle = {
     "--demo-theme": themeColor,
     "--demo-on-theme": getReadableAccentText(themeColor),
@@ -148,7 +152,7 @@ function App() {
   }, []);
 
   return (
-    <main className="demo-app" style={appStyle} data-scanning={isScanning}>
+    <main className="demo-app" style={appStyle} data-scanning={isActive}>
       <BarcodeScanner
         ref={scannerRef}
         onScan={handleScan}
@@ -173,7 +177,6 @@ function App() {
       </header>
 
       <label className="demo-theme-control" htmlFor="theme-color">
-        <span className="demo-sr-only">Scanner accent color</span>
         <input
           id="theme-color"
           type="color"
@@ -181,17 +184,27 @@ function App() {
           onChange={(event) => setThemeColor(event.target.value)}
           aria-label="Choose scanner accent color"
         />
+        <span
+          className="demo-theme-swatch"
+          style={{ backgroundColor: themeColor }}
+          aria-hidden="true"
+        />
+        <svg className="demo-theme-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M3 4h10M5 8h6m-4 4h2" stroke="currentColor" strokeLinecap="round" />
+        </svg>
       </label>
 
       {!result && (
         <div className="demo-primary-controls">
           <button
             type="button"
-            className={`demo-scan-button ${isScanning ? "is-stopping" : "is-starting"}`}
-            onClick={isScanning ? stopScanning : startScanning}
-            aria-label={isScanning ? "Stop scanning" : "Start scanning"}
+            className={`demo-scan-button ${isActive ? "is-stopping" : "is-starting"}`}
+            onClick={isActive ? stopScanning : startScanning}
+            aria-label={
+              isStarting ? "Cancel camera" : isScanning ? "Stop scanning" : "Start scanning"
+            }
           >
-            <CameraIcon stopped={isScanning} />
+            <CameraIcon stopped={isActive} />
           </button>
         </div>
       )}
