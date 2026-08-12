@@ -34,7 +34,7 @@ test("visual audit cards fit desktop and mobile viewports", async ({ page }) => 
     const cards = page.locator(".visual-audit-card");
     const iconItems = page.locator(".visual-audit-icon-item");
     await expect(cards).toHaveCount(7);
-    await expect(iconItems).toHaveCount(10);
+    await expect(iconItems).toHaveCount(9);
     await expectNoHorizontalOverflow(page);
 
     const cardEdges = await cards.evaluateAll((elements) =>

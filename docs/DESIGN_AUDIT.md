@@ -6,7 +6,7 @@ The scanner interface was visually reviewed end to end on 2026-08-12. Idle, came
 
 Hallmark result: **0 critical · 0 major · 0 minor**.
 
-![Modern Barcode Scanner desktop idle state](./assets/scanner-idle.jpg)
+![Modern Barcode Scanner scanner-ready desktop idle state](./assets/scanner-idle.jpg)
 
 ## Design system
 
@@ -16,6 +16,7 @@ Hallmark result: **0 critical · 0 major · 0 minor**.
 - Tone: precise, calm, technical
 - Type: Space Grotesk display, Inter body, JetBrains Mono labels
 - Icon language: custom 24 × 24 SVG grid, 1.75 px optical stroke, round caps and joins
+- Brand consistency: the canonical scan-frame logo is reused for both the brand mark and scanner standby state
 - Viewfinder language: four balanced corner brackets, four calibration ticks, a one-pixel scan beam, and a restrained off-region scrim
 - Motion: transform/opacity only, with reduced-motion fallbacks
 
@@ -55,7 +56,7 @@ The visual review is backed by browser assertions in `tests/browser/visual-layou
 - compact result-dialog sizing and focus containment;
 - dark-mode and reduced-motion behavior.
 
-The latest local verification completed 113 unit/integration tests and 15 Chromium, WebKit, and Chromium fake-camera browser tests. The configured Firefox project could not launch on the local macOS host and stalled before executing application code; CI retains Firefox coverage.
+The latest local verification completed 114 unit/integration tests and 15 Chromium, WebKit, and Chromium fake-camera browser tests. The configured Firefox project could not launch on the local macOS host and stalled before executing application code; CI retains Firefox coverage.
 
 ## Reproducing the review
 

@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle } from "react";
 import { useScanner } from "../hooks/useScanner";
 import { SCANNER_THEME } from "../constants/theme";
 import type { BarcodeScannerProps, BarcodeScannerRef, ScannerState } from "../types";
-import { IconCameraPlaceholder } from "./Icons";
+import { IconScanFrame } from "./Icons";
 import ScanLine from "./ScanLine";
 import ScannerControls from "./ScannerControls";
 
@@ -120,7 +120,7 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
           aria-label="Barcode scanner viewfinder"
           aria-busy={isStarting}
         >
-          <IconCameraPlaceholder className="mbs-placeholder-icon" />
+          <IconScanFrame className="mbs-placeholder-icon" />
           <video
             title="Barcode Scanner"
             ref={videoRef}

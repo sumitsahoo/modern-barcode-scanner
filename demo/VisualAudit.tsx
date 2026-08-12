@@ -5,7 +5,6 @@ import {
   IconAdjustments,
   IconCamera,
   IconCameraOff,
-  IconCameraPlaceholder,
   IconCheck,
   IconRotateCamera,
   IconScanFrame,
@@ -62,7 +61,7 @@ const ActivePreview = ({
 const StartingPreview = () => (
   <div className="mbs-container visual-audit-stage" data-state="starting">
     <section className="mbs-video-container" aria-label="Starting scanner preview" aria-busy="true">
-      <IconCameraPlaceholder className="mbs-placeholder-icon" />
+      <IconScanFrame className="mbs-placeholder-icon" />
     </section>
     <span className="mbs-sr-only" role="status">
       Starting barcode scanner
@@ -77,7 +76,6 @@ const iconSamples: ReadonlyArray<{
   { Icon: IconAlert, label: "Alert" },
   { Icon: IconCamera, label: "Camera" },
   { Icon: IconCameraOff, label: "Camera off" },
-  { Icon: IconCameraPlaceholder, label: "Camera ready" },
   { Icon: IconRotateCamera, label: "Switch camera" },
   { Icon: IconTorchOn, label: "Torch on" },
   { Icon: IconTorchOff, label: "Torch off" },

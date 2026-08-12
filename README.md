@@ -14,7 +14,7 @@
 
 ## Interface Preview
 
-![Modern Barcode Scanner in its camera-off idle state](./docs/assets/scanner-idle.jpg)
+![Modern Barcode Scanner in its scanner-ready idle state](./docs/assets/scanner-idle.jpg)
 
 Desktop idle state at 1440 × 900. The same interface is audited across desktop, tablet, and mobile in the [design audit](./docs/DESIGN_AUDIT.md).
 
@@ -253,7 +253,7 @@ function CustomScanner() {
 
 Attach `viewfinderRef` to the region represented by your custom guide. The hook maps that displayed rectangle through the camera video's `object-fit: cover` crop and prioritizes it for decoding; when no measurable guide is attached, it safely falls back to full-frame scanning.
 
-For custom interfaces, the package also exports `ScannerControls`, `ScanLine`, and the complete 24 px icon system: `IconCamera`, `IconCameraOff`, `IconCameraPlaceholder`, `IconRotateCamera`, `IconTorchOn`, `IconTorchOff`, `IconScanFrame`, `IconCheck`, `IconAlert`, and `IconAdjustments`. Every icon inherits `currentColor` and accepts standard React SVG props.
+For custom interfaces, the package also exports `ScannerControls`, `ScanLine`, and the complete 24 px icon system: `IconCamera`, `IconCameraOff`, `IconCameraPlaceholder`, `IconRotateCamera`, `IconTorchOn`, `IconTorchOff`, `IconScanFrame`, `IconCheck`, `IconAlert`, and `IconAdjustments`. `IconCameraPlaceholder` remains a backward-compatible alias of the canonical `IconScanFrame` logo. Every icon inherits `currentColor` and accepts standard React SVG props.
 
 ### Helper Utilities
 

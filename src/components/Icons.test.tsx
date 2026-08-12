@@ -48,4 +48,8 @@ describe("scanner icons", () => {
   it("uses a dedicated ready-state symbol instead of the camera-off glyph", () => {
     expect(IconCameraPlaceholder).not.toBe(IconCameraOff);
   });
+
+  it("uses the canonical scanner logo for the ready-state placeholder", () => {
+    expect(IconCameraPlaceholder).toBe(IconScanFrame);
+  });
 });
