@@ -25,7 +25,20 @@ export const getViewfinderSourceRegion = (
   videoRectangle: RectangleLike,
   viewfinderRectangle: RectangleLike,
 ): SourceRegion | null => {
+  const measurements = [
+    sourceWidth,
+    sourceHeight,
+    videoRectangle.left,
+    videoRectangle.top,
+    videoRectangle.width,
+    videoRectangle.height,
+    viewfinderRectangle.left,
+    viewfinderRectangle.top,
+    viewfinderRectangle.width,
+    viewfinderRectangle.height,
+  ];
   if (
+    measurements.some((measurement) => !Number.isFinite(measurement)) ||
     sourceWidth <= 0 ||
     sourceHeight <= 0 ||
     videoRectangle.width <= 0 ||

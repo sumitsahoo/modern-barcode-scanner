@@ -42,4 +42,27 @@ describe("getViewfinderSourceRegion", () => {
       ),
     ).toBeNull();
   });
+
+  it("rejects non-finite source and layout measurements", () => {
+    const videoRectangle = { left: 0, top: 0, width: 390, height: 844 };
+    const viewfinderRectangle = { left: 16, top: 220, width: 358, height: 400 };
+
+    expect(
+      getViewfinderSourceRegion(Number.NaN, 1080, videoRectangle, viewfinderRectangle),
+    ).toBeNull();
+    expect(
+      getViewfinderSourceRegion(
+        1920,
+        1080,
+        { ...videoRectangle, left: Number.NEGATIVE_INFINITY },
+        viewfinderRectangle,
+      ),
+    ).toBeNull();
+    expect(
+      getViewfinderSourceRegion(1920, 1080, videoRectangle, {
+        ...viewfinderRectangle,
+        height: Number.POSITIVE_INFINITY,
+      }),
+    ).toBeNull();
+  });
 });

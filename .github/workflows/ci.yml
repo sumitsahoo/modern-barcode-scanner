@@ -31,7 +31,7 @@ jobs:
       - name: Reproduce generated engine
         run: |
           npm run engine:build
-          git diff --exit-code -- src/decoders/zxing/generated
+          git diff --exit-code -- src/decoders/zxing/generated engine/wasm/source-lock.json engine/wasm/sbom.spdx.json
 
       - name: Audit dependencies and generated engine
         run: |

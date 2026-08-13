@@ -4,9 +4,11 @@ const MAX_EXPOSURE = 242;
 const MIN_CONTRAST = 10;
 const MIN_SHARPNESS = 2;
 const MAX_GLARE_RATIO = 0.88;
+const MAX_GLARE_CONTRAST = 50;
 const MAX_MOTION_DELTA = 72;
+const MIN_FRAME_SCORE = 0.33;
 
-export type FrameQualityIssue = "blur" | "contrast" | "exposure" | "glare" | "motion";
+export type FrameQualityIssue = "blur" | "contrast" | "exposure" | "glare" | "motion" | "quality";
 
 export interface FrameQualityMetrics {
   /** Weighted zero-to-one suitability score. */
@@ -38,6 +40,23 @@ interface SampledLuminance {
 const clamp = (value: number, minimum = 0, maximum = 1) =>
   Math.min(maximum, Math.max(minimum, value));
 
+const getSamplingGrid = (width: number, height: number) => {
+  const aspectRatio = width / height;
+  const columns = Math.max(
+    1,
+    Math.min(width, MAX_QUALITY_SAMPLES, Math.floor(Math.sqrt(MAX_QUALITY_SAMPLES * aspectRatio))),
+  );
+  const rows = Math.max(1, Math.min(height, Math.floor(MAX_QUALITY_SAMPLES / columns)));
+  return { columns, rows };
+};
+
+/** Choose a stable, dispersed point within a sampling cell to avoid grid aliasing. */
+const getSampleCoordinate = (cell: number, cellCount: number, dimension: number, phase: number) => {
+  const start = Math.floor((cell * dimension) / cellCount);
+  const end = Math.max(start + 1, Math.floor(((cell + 1) * dimension) / cellCount));
+  return start + (phase % (end - start));
+};
+
 const sampleLuminance = (imageData: ImageData, reusableValues?: Uint8Array): SampledLuminance => {
   const { data, width, height } = imageData;
   if (
@@ -45,21 +64,23 @@ const sampleLuminance = (imageData: ImageData, reusableValues?: Uint8Array): Sam
     !Number.isSafeInteger(height) ||
     width <= 0 ||
     height <= 0 ||
+    !(data instanceof Uint8ClampedArray) ||
+    !Number.isSafeInteger(width * height * 4) ||
     data.byteLength !== width * height * 4
   ) {
     throw new RangeError("Frame-quality scoring requires valid RGBA image data");
   }
 
-  const step = Math.max(1, Math.ceil(Math.sqrt((width * height) / MAX_QUALITY_SAMPLES)));
-  const columns = Math.ceil(width / step);
-  const rows = Math.ceil(height / step);
+  const { columns, rows } = getSamplingGrid(width, height);
   const sampleCount = columns * rows;
   const values =
     reusableValues?.length === sampleCount ? reusableValues : new Uint8Array(sampleCount);
   let target = 0;
 
-  for (let y = 0; y < height; y += step) {
-    for (let x = 0; x < width; x += step) {
+  for (let row = 0; row < rows; row++) {
+    for (let column = 0; column < columns; column++) {
+      const x = getSampleCoordinate(column, columns, width, column * 17 + row * 13 + 1);
+      const y = getSampleCoordinate(row, rows, height, column * 11 + row * 19 + 1);
       const source = (y * width + x) * 4;
       values[target++] =
         (306 * data[source] + 601 * data[source + 1] + 117 * data[source + 2] + 0x200) >> 10;
@@ -131,7 +152,9 @@ export class FrameQualityEstimator {
     if (exposure < MIN_EXPOSURE || exposure > MAX_EXPOSURE) issues.push("exposure");
     if (contrast < MIN_CONTRAST) issues.push("contrast");
     if (sharpness < MIN_SHARPNESS && contrast < 35) issues.push("blur");
-    if (glare > MAX_GLARE_RATIO) issues.push("glare");
+    // A white quiet zone is common around valid symbols. Treat clipped pixels
+    // as glare only when the frame also lacks the contrast of printed modules.
+    if (glare > MAX_GLARE_RATIO && contrast < MAX_GLARE_CONTRAST) issues.push("glare");
     if (motion !== null && motion > MAX_MOTION_DELTA) issues.push("motion");
 
     const exposureScore = 1 - clamp(Math.abs(exposure - 128) / 116);
@@ -145,6 +168,7 @@ export class FrameQualityEstimator {
       sharpnessScore * 0.28 +
       glareScore * 0.16 +
       motionScore * 0.16;
+    if (score < MIN_FRAME_SCORE) issues.push("quality");
 
     return {
       acceptable: issues.length === 0,

@@ -4,6 +4,7 @@ import type { WorkerResponse } from "../../src/workers/scanner.worker";
 interface BrowserTestState {
   done: boolean;
   response?: WorkerResponse;
+  transferred?: boolean;
   error?: string;
 }
 
@@ -35,6 +36,8 @@ const run = async () => {
   const context = canvas.getContext("2d", { willReadFrequently: true });
   if (!context) throw new Error("Canvas 2D is unavailable");
   context.drawImage(image, 0, 0);
+  const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+  const imageBuffer = imageData.data.buffer;
 
   const worker = new ScannerWorker();
   const response = await new Promise<WorkerResponse>((resolve, reject) => {
@@ -46,17 +49,25 @@ const run = async () => {
       },
     );
     worker.addEventListener("error", (event) => reject(new Error(event.message)), { once: true });
-    worker.postMessage({
-      type: "scan",
-      scannerId: 1,
-      sessionId: 1,
-      region: "viewfinder",
-      imageData: context.getImageData(0, 0, canvas.width, canvas.height),
-    });
+    worker.postMessage(
+      {
+        type: "scan",
+        requestId: 1,
+        scannerId: 1,
+        sessionId: 1,
+        region: "viewfinder",
+        imageData,
+      },
+      [imageBuffer],
+    );
   });
   worker.terminate();
 
-  window.__MBS_BROWSER_TEST__ = { done: true, response };
+  window.__MBS_BROWSER_TEST__ = {
+    done: true,
+    response,
+    transferred: imageBuffer.byteLength === 0,
+  };
   if (status) status.textContent = response.found ? "Decoded" : (response.error ?? "Not found");
 };
 

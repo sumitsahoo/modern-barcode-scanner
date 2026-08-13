@@ -24,6 +24,7 @@ export interface ModernBarcodeModule {
   _free(pointer: number): void;
   readBarcodeFromLuminance(
     bufferPointer: number,
+    bufferByteLength: number,
     width: number,
     height: number,
     tryHarder: boolean,

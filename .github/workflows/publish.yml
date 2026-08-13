@@ -32,6 +32,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Reproduce generated engine
+        run: |
+          npm run engine:build
+          git diff --exit-code -- src/decoders/zxing/generated engine/wasm/source-lock.json engine/wasm/sbom.spdx.json
+          npm run engine:verify
+
       - name: Install browser test runtimes
         run: npx playwright install --with-deps chromium firefox webkit
 
@@ -42,7 +48,6 @@ jobs:
           npm run check
           npm test
           npm run test:browser
-          npm run engine:verify
           npm run build
           npm pack --dry-run
 

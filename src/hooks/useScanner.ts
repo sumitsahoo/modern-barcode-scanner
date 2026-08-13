@@ -17,6 +17,10 @@ import { getViewfinderSourceRegion } from "../utils/scanRegion";
 import ScannerWorker from "../workers/scanner.worker.ts?worker&inline";
 import type { WorkerResponse } from "../workers/scanner.worker";
 
+const MAX_CONSECUTIVE_CAPTURE_FAILURES = 5;
+const VIDEO_READINESS_TIMEOUT_MS = 5_000;
+const WORKER_RESPONSE_TIMEOUT_MS = 15_000;
+
 interface UseScannerOptions extends ScannerConfig {
   onScan: (result: ScanResult) => void;
   onError?: (error: Error) => void;
@@ -28,17 +32,29 @@ let sharedWorker: Worker | null = null;
 let workerRefCount = 0;
 let terminateTimeoutId: ReturnType<typeof setTimeout> | null = null;
 let nextScannerId = 1;
+const workerInvalidationListeners = new Set<(worker: Worker, error: Error) => void>();
 
-const getSharedWorker = (): Worker => {
+const createSharedWorker = (): Worker => {
   if (terminateTimeoutId) {
     clearTimeout(terminateTimeoutId);
     terminateTimeoutId = null;
   }
-  if (!sharedWorker) {
-    sharedWorker = new ScannerWorker();
-  }
-  workerRefCount++;
+  sharedWorker ??= new ScannerWorker();
   return sharedWorker;
+};
+
+const getSharedWorker = (): Worker => {
+  const worker = createSharedWorker();
+  workerRefCount++;
+  return worker;
+};
+
+const replaceInvalidSharedWorker = (worker: Worker, error: Error): void => {
+  if (sharedWorker !== worker) return;
+
+  sharedWorker = null;
+  worker.terminate();
+  for (const listener of workerInvalidationListeners) listener(worker, error);
 };
 
 const releaseSharedWorker = (): void => {
@@ -58,12 +74,80 @@ const getTorchSupport = (stream: MediaStream): boolean => {
   const track = stream.getVideoTracks()[0];
 
   try {
-    const capabilities = track?.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
+    const capabilities = track?.getCapabilities?.() as MediaTrackCapabilities & { torch?: boolean };
     return capabilities?.torch === true;
   } catch {
     // Some browsers expose getCapabilities but throw for camera tracks.
     return false;
   }
+};
+
+interface VideoDimensions {
+  width: number;
+  height: number;
+}
+
+const getPositiveDimensions = (width: unknown, height: unknown): VideoDimensions | null =>
+  typeof width === "number" &&
+  typeof height === "number" &&
+  Number.isFinite(width) &&
+  Number.isFinite(height) &&
+  width > 0 &&
+  height > 0
+    ? { width, height }
+    : null;
+
+const getVideoDimensions = (
+  video: HTMLVideoElement,
+  stream: MediaStream | null,
+): VideoDimensions | null => {
+  if (
+    typeof video.readyState === "number" &&
+    video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
+  ) {
+    return null;
+  }
+  const displayedDimensions = getPositiveDimensions(video.videoWidth, video.videoHeight);
+  if (displayedDimensions) return displayedDimensions;
+
+  try {
+    const settings = stream?.getVideoTracks()[0]?.getSettings?.();
+    return getPositiveDimensions(settings?.width, settings?.height);
+  } catch {
+    return null;
+  }
+};
+
+const toError = (error: unknown, fallback: string): Error =>
+  error instanceof Error
+    ? error
+    : typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof error.message === "string"
+      ? new Error(error.message)
+      : new Error(fallback);
+
+const isWorkerResponse = (value: unknown): value is WorkerResponse => {
+  if (typeof value !== "object" || value === null) return false;
+  const response = value as Partial<WorkerResponse>;
+  return (
+    typeof response.found === "boolean" &&
+    Number.isSafeInteger(response.requestId) &&
+    (response.requestId as number) >= 0 &&
+    Number.isSafeInteger(response.scannerId) &&
+    (response.scannerId as number) >= 0 &&
+    Number.isSafeInteger(response.sessionId) &&
+    (response.sessionId as number) >= 0 &&
+    (response.error === undefined || typeof response.error === "string") &&
+    (response.data === undefined ||
+      (typeof response.data === "object" &&
+        response.data !== null &&
+        typeof response.data.typeName === "string" &&
+        typeof response.data.scanData === "string")) &&
+    !(response.found && !response.data) &&
+    !(response.found && response.error !== undefined)
+  );
 };
 
 const hasMultipleCameras = async (): Promise<boolean> => {
@@ -107,12 +191,22 @@ export const useScanner = ({
 
   // Refs for scanning control
   const animationFrameId = useRef<number | null>(null);
+  const scheduledVideoRef = useRef<HTMLVideoElement | null>(null);
+  const usesVideoFrameCallbackRef = useRef<boolean>(false);
   const workerRef = useRef<Worker | null>(null);
   const activeStreamRef = useRef<MediaStream | null>(null);
   const lastScanTimeRef = useRef<number>(0);
   const scanAttemptRef = useRef<number>(0);
   const captureAttemptRef = useRef<number>(0);
+  const captureFailureCountRef = useRef<number>(0);
   const scannerIdRef = useRef<number | null>(null);
+  const nextRequestIdRef = useRef<number>(1);
+  const pendingRequestIdRef = useRef<number | null>(null);
+  const workerResponseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const videoReadinessStartedAtRef = useRef<number | null>(null);
+  const ensureWorkerRef = useRef<() => Worker | null>(() => null);
+  const activeTrackRef = useRef<MediaStreamTrack | null>(null);
+  const activeTrackEndedListenerRef = useRef<(() => void) | null>(null);
 
   if (scannerIdRef.current === null) {
     scannerIdRef.current = nextScannerId++;
@@ -126,6 +220,37 @@ export const useScanner = ({
   const onStateChangeRef = useRef(onStateChange);
   onErrorRef.current = onError;
   onStateChangeRef.current = onStateChange;
+  const normalizedScanInterval =
+    Number.isFinite(scanInterval) && scanInterval >= 0 ? scanInterval : SCAN_INTERVAL_MS;
+
+  const clearPendingWorkerRequest = useCallback(() => {
+    if (workerResponseTimeoutRef.current !== null) {
+      clearTimeout(workerResponseTimeoutRef.current);
+      workerResponseTimeoutRef.current = null;
+    }
+    pendingRequestIdRef.current = null;
+    isWorkerBusy.current = false;
+  }, []);
+
+  const cancelScheduledFrame = useCallback(() => {
+    if (animationFrameId.current === null) return;
+    if (usesVideoFrameCallbackRef.current) {
+      scheduledVideoRef.current?.cancelVideoFrameCallback?.(animationFrameId.current);
+    } else {
+      cancelAnimationFrame(animationFrameId.current);
+    }
+    animationFrameId.current = null;
+    scheduledVideoRef.current = null;
+    usesVideoFrameCallbackRef.current = false;
+  }, []);
+
+  const detachActiveTrackListener = useCallback(() => {
+    if (activeTrackRef.current && activeTrackEndedListenerRef.current) {
+      activeTrackRef.current.removeEventListener?.("ended", activeTrackEndedListenerRef.current);
+    }
+    activeTrackRef.current = null;
+    activeTrackEndedListenerRef.current = null;
+  }, []);
 
   // Notify state changes
   useEffect(() => {
@@ -139,25 +264,30 @@ export const useScanner = ({
   }, []);
 
   /** Release one stream without disturbing a newer replacement stream. */
-  const releaseStream = useCallback((stream: MediaStream | null) => {
-    if (!stream) return;
+  const releaseStream = useCallback(
+    (stream: MediaStream | null) => {
+      if (!stream) return;
 
-    if (activeStreamRef.current === stream) {
-      activeStreamRef.current = null;
-    }
+      if (activeStreamRef.current === stream) {
+        detachActiveTrackListener();
+        activeStreamRef.current = null;
+      }
 
-    if (videoRef.current?.srcObject === stream) {
-      videoRef.current.pause();
-      videoRef.current.srcObject = null;
-    }
+      if (videoRef.current?.srcObject === stream) {
+        videoRef.current.pause();
+        videoRef.current.srcObject = null;
+      }
 
-    stopAllTracks(stream);
-  }, []);
+      stopAllTracks(stream);
+    },
+    [detachActiveTrackListener],
+  );
 
   /** Release every stream currently owned or attached by this scanner. */
   const releaseCamera = useCallback(() => {
     const ownedStream = activeStreamRef.current;
     const attachedStream = (videoRef.current?.srcObject as MediaStream | null) ?? null;
+    detachActiveTrackListener();
     activeStreamRef.current = null;
 
     if (videoRef.current) {
@@ -168,7 +298,7 @@ export const useScanner = ({
     for (const stream of new Set([ownedStream, attachedStream])) {
       stopAllTracks(stream);
     }
-  }, []);
+  }, [detachActiveTrackListener]);
 
   /**
    * Stop scanning and cleanup resources
@@ -176,11 +306,9 @@ export const useScanner = ({
   const handleStopScan = useCallback(() => {
     scanSessionRef.current += 1;
     cameraRequestRef.current += 1;
+    clearPendingWorkerRequest();
 
-    if (animationFrameId.current !== null) {
-      cancelAnimationFrame(animationFrameId.current);
-      animationFrameId.current = null;
-    }
+    cancelScheduledFrame();
 
     releaseCamera();
 
@@ -192,7 +320,26 @@ export const useScanner = ({
       isTorchSupported: false,
       canSwitchCamera: false,
     }));
-  }, [releaseCamera]);
+  }, [cancelScheduledFrame, clearPendingWorkerRequest, releaseCamera]);
+
+  const watchActiveStream = useCallback(
+    (stream: MediaStream, sessionId: number) => {
+      detachActiveTrackListener();
+      const track = stream.getVideoTracks()[0];
+      if (!track?.addEventListener) return;
+
+      const handleEnded = () => {
+        if (activeStreamRef.current !== stream || scanSessionRef.current !== sessionId) return;
+        handleStopScan();
+        onErrorRef.current?.(new Error("The active camera stream ended unexpectedly"));
+      };
+
+      activeTrackRef.current = track;
+      activeTrackEndedListenerRef.current = handleEnded;
+      track.addEventListener("ended", handleEnded, { once: true });
+    },
+    [detachActiveTrackListener, handleStopScan],
+  );
 
   const handleDetectionRef = useRef<((data: ScanResult) => void) | null>(null);
   handleDetectionRef.current = (data: ScanResult) => {
@@ -211,16 +358,33 @@ export const useScanner = ({
 
   // Initialize Web Worker - uses shared worker with delayed cleanup
   useEffect(() => {
-    workerRef.current = getSharedWorker();
+    let attachedWorker: Worker | null = null;
+    let disposed = false;
+    let hasWorkerLease = false;
+    let automaticRecreationAttempted = false;
 
     const handleMessage = (e: MessageEvent<WorkerResponse>) => {
-      const { found, data, error, scannerId, sessionId } = e.data;
+      const sourceWorker = e.currentTarget as Worker | null;
+      if (sourceWorker && sourceWorker !== attachedWorker) return;
+      if (!isWorkerResponse(e.data)) {
+        const failedWorker = sourceWorker ?? attachedWorker;
+        if (failedWorker) {
+          replaceInvalidSharedWorker(
+            failedWorker,
+            new Error("The barcode decoder worker returned an unreadable message"),
+          );
+        }
+        return;
+      }
+      const { found, data, error, requestId, scannerId, sessionId } = e.data;
       if (scannerId !== scannerIdRef.current) return;
 
       // Only process if this result belongs to this scanner's current session.
       if (sessionId !== scanSessionRef.current) return;
+      if (requestId !== pendingRequestIdRef.current) return;
 
-      isWorkerBusy.current = false;
+      automaticRecreationAttempted = false;
+      clearPendingWorkerRequest();
 
       if (error) {
         handleStopScan();
@@ -230,23 +394,92 @@ export const useScanner = ({
       }
     };
 
-    const handleError = (error: ErrorEvent) => {
-      isWorkerBusy.current = false;
-      handleStopScan();
-      onErrorRef.current?.(new Error(error.message));
+    const handleError = (event: ErrorEvent) => {
+      const sourceWorker = event.currentTarget as Worker | null;
+      if (sourceWorker && sourceWorker !== attachedWorker) return;
+      const failedWorker = sourceWorker ?? attachedWorker;
+      if (!failedWorker) return;
+      replaceInvalidSharedWorker(
+        failedWorker,
+        new Error(event.message || "The barcode decoder worker stopped unexpectedly"),
+      );
     };
 
-    workerRef.current.addEventListener("message", handleMessage);
-    workerRef.current.addEventListener("error", handleError);
+    const handleMessageError = (event: MessageEvent) => {
+      const sourceWorker = event.currentTarget as Worker | null;
+      if (sourceWorker && sourceWorker !== attachedWorker) return;
+      const failedWorker = sourceWorker ?? attachedWorker;
+      if (!failedWorker) return;
+      replaceInvalidSharedWorker(
+        failedWorker,
+        new Error("The barcode decoder worker returned an unreadable message"),
+      );
+    };
+
+    const detachWorker = () => {
+      if (!attachedWorker) return;
+      attachedWorker.removeEventListener("message", handleMessage);
+      attachedWorker.removeEventListener("error", handleError);
+      attachedWorker.removeEventListener("messageerror", handleMessageError);
+      if (workerRef.current === attachedWorker) workerRef.current = null;
+      attachedWorker = null;
+    };
+
+    const connectWorker = (): Worker | null => {
+      if (disposed) return null;
+      if (attachedWorker) return attachedWorker;
+
+      const worker = hasWorkerLease ? createSharedWorker() : getSharedWorker();
+      hasWorkerLease = true;
+      attachedWorker = worker;
+      workerRef.current = worker;
+      worker.addEventListener("message", handleMessage);
+      worker.addEventListener("error", handleError);
+      worker.addEventListener("messageerror", handleMessageError);
+      return worker;
+    };
+
+    const handleWorkerInvalidation = (failedWorker: Worker, error: Error) => {
+      if (attachedWorker !== failedWorker) return;
+      detachWorker();
+      clearPendingWorkerRequest();
+      handleStopScan();
+      onErrorRef.current?.(error);
+
+      if (!automaticRecreationAttempted) {
+        automaticRecreationAttempted = true;
+        try {
+          connectWorker();
+        } catch {
+          // A later explicit start retries construction and reports that error.
+        }
+      }
+    };
+
+    workerInvalidationListeners.add(handleWorkerInvalidation);
+    ensureWorkerRef.current = connectWorker;
+
+    try {
+      connectWorker();
+    } catch (error) {
+      handleStopScan();
+      onErrorRef.current?.(toError(error, "Unable to create the barcode decoder worker"));
+    }
 
     return () => {
-      if (workerRef.current) {
-        workerRef.current.removeEventListener("message", handleMessage);
-        workerRef.current.removeEventListener("error", handleError);
-        workerRef.current = null;
-      }
-      releaseSharedWorker();
+      disposed = true;
+      ensureWorkerRef.current = () => null;
+      workerInvalidationListeners.delete(handleWorkerInvalidation);
+      detachWorker();
+      clearPendingWorkerRequest();
+      if (hasWorkerLease) releaseSharedWorker();
     };
+  }, [clearPendingWorkerRequest, handleStopScan]);
+
+  useEffect(() => {
+    const handlePageHide = () => handleStopScan();
+    window.addEventListener("pagehide", handlePageHide);
+    return () => window.removeEventListener("pagehide", handlePageHide);
   }, [handleStopScan]);
 
   /**
@@ -254,19 +487,18 @@ export const useScanner = ({
    */
   const handleScan = useCallback(async () => {
     // Calling start repeatedly must replace, rather than leak, an active stream.
-    if (animationFrameId.current !== null) {
-      cancelAnimationFrame(animationFrameId.current);
-      animationFrameId.current = null;
-    }
+    cancelScheduledFrame();
     releaseCamera();
 
     scanSessionRef.current += 1;
     const currentSession = scanSessionRef.current;
     const currentCameraRequest = ++cameraRequestRef.current;
-    isWorkerBusy.current = false;
+    clearPendingWorkerRequest();
     lastScanTimeRef.current = 0;
     scanAttemptRef.current = 0;
     captureAttemptRef.current = 0;
+    captureFailureCountRef.current = 0;
+    videoReadinessStartedAtRef.current = null;
 
     setScannerState((prev) => ({
       ...prev,
@@ -280,6 +512,9 @@ export const useScanner = ({
     let stream: MediaStream | null = null;
 
     try {
+      if (!ensureWorkerRef.current()) {
+        throw new Error("Barcode decoding is not supported in this browser");
+      }
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("Camera access is not supported in this browser");
       }
@@ -302,6 +537,7 @@ export const useScanner = ({
       }
 
       activeStreamRef.current = stream;
+      watchActiveStream(stream, currentSession);
       videoRef.current.srcObject = stream;
       await videoRef.current.play();
 
@@ -318,6 +554,7 @@ export const useScanner = ({
       if (!canvas) {
         throw new Error("Scanner canvas is unavailable");
       }
+      const activeCanvas = canvas;
 
       // Reuse context for better performance
       if (!contextRef.current) {
@@ -337,22 +574,30 @@ export const useScanner = ({
       }));
       void refreshCameraAvailability(currentSession);
 
-      const videoSettings = stream.getVideoTracks()[0]?.getSettings();
-      const width = videoRef.current.videoWidth || videoSettings?.width || MAX_SCAN_DIMENSION;
-      const height = videoRef.current.videoHeight || videoSettings?.height || MAX_SCAN_DIMENSION;
-
-      // Downscale for performance
-      const scale = Math.min(MAX_SCAN_DIMENSION / width, MAX_SCAN_DIMENSION / height, 1);
-      const scanWidth = Math.floor(width * scale);
-      const scanHeight = Math.floor(height * scale);
-
-      canvas.width = scanWidth;
-      canvas.height = scanHeight;
-
       /**
        * Animation loop for continuous barcode scanning
        */
-      const scanTick = () => {
+      const scheduleNextFrame = () => {
+        const video = videoRef.current;
+        if (
+          video?.requestVideoFrameCallback &&
+          getVideoDimensions(video, activeStreamRef.current)
+        ) {
+          usesVideoFrameCallbackRef.current = true;
+          scheduledVideoRef.current = video;
+          animationFrameId.current = video.requestVideoFrameCallback(() => scanTick());
+        } else {
+          usesVideoFrameCallbackRef.current = false;
+          scheduledVideoRef.current = null;
+          animationFrameId.current = requestAnimationFrame(scanTick);
+        }
+      };
+
+      function scanTick() {
+        animationFrameId.current = null;
+        scheduledVideoRef.current = null;
+        usesVideoFrameCallbackRef.current = false;
+
         // Stop if session changed
         if (currentSession !== scanSessionRef.current) {
           return;
@@ -362,23 +607,45 @@ export const useScanner = ({
         const timeSinceLastScan = now - lastScanTimeRef.current;
 
         // Throttle scan rate
-        if (timeSinceLastScan < scanInterval || isWorkerBusy.current) {
-          animationFrameId.current = requestAnimationFrame(scanTick);
+        if (timeSinceLastScan < normalizedScanInterval || isWorkerBusy.current) {
+          scheduleNextFrame();
           return;
         }
 
         lastScanTimeRef.current = now;
 
         try {
-          if (!videoRef.current || !context || !workerRef.current) {
-            animationFrameId.current = requestAnimationFrame(scanTick);
+          const video = videoRef.current;
+          const worker = workerRef.current;
+          const activeStream = activeStreamRef.current;
+          if (!video || !context || !worker || !activeStream) {
+            scheduleNextFrame();
             return;
           }
+
+          const dimensions = getVideoDimensions(video, activeStream);
+          if (!dimensions) {
+            videoReadinessStartedAtRef.current ??= now;
+            if (now - videoReadinessStartedAtRef.current >= VIDEO_READINESS_TIMEOUT_MS) {
+              handleStopScan();
+              onErrorRef.current?.(new Error("The camera did not provide a usable video frame"));
+              return;
+            }
+            scheduleNextFrame();
+            return;
+          }
+          videoReadinessStartedAtRef.current = null;
+          const { width, height } = dimensions;
+          const scale = Math.min(MAX_SCAN_DIMENSION / width, MAX_SCAN_DIMENSION / height, 1);
+          const scanWidth = Math.max(1, Math.floor(width * scale));
+          const scanHeight = Math.max(1, Math.floor(height * scale));
+          if (activeCanvas.width !== scanWidth) activeCanvas.width = scanWidth;
+          if (activeCanvas.height !== scanHeight) activeCanvas.height = scanHeight;
 
           const captureAttempt = captureAttemptRef.current++;
           const shouldCaptureFullFrame =
             captureAttempt % FULL_FRAME_SCAN_INTERVAL === FULL_FRAME_SCAN_INTERVAL - 1;
-          const videoRectangle = videoRef.current.getBoundingClientRect?.();
+          const videoRectangle = video.getBoundingClientRect?.();
           const viewfinderRectangle = viewfinderRef.current?.getBoundingClientRect();
           const sourceRegion =
             !shouldCaptureFullFrame && videoRectangle && viewfinderRectangle
@@ -394,7 +661,7 @@ export const useScanner = ({
             frameHeight = Math.max(1, Math.floor(sourceRegion.height * scale));
             region = "viewfinder";
             context.drawImage(
-              videoRef.current,
+              video,
               sourceRegion.x,
               sourceRegion.y,
               sourceRegion.width,
@@ -405,19 +672,35 @@ export const useScanner = ({
               frameHeight,
             );
           } else {
-            context.drawImage(videoRef.current, 0, 0, scanWidth, scanHeight);
+            context.drawImage(video, 0, 0, scanWidth, scanHeight);
           }
 
           const imageData = context.getImageData(0, 0, frameWidth, frameHeight);
+          const requestId = nextRequestIdRef.current++;
 
           // Mark worker as busy before sending
           isWorkerBusy.current = true;
+          pendingRequestIdRef.current = requestId;
+          workerResponseTimeoutRef.current = setTimeout(() => {
+            if (
+              currentSession !== scanSessionRef.current ||
+              pendingRequestIdRef.current !== requestId ||
+              workerRef.current !== worker
+            ) {
+              return;
+            }
+            replaceInvalidSharedWorker(
+              worker,
+              new Error("The barcode decoder worker did not respond in time"),
+            );
+          }, WORKER_RESPONSE_TIMEOUT_MS);
 
           // Send to worker with session ID for tracking
-          workerRef.current.postMessage(
+          worker.postMessage(
             {
               imageData,
               type: "scan",
+              requestId,
               scannerId: scannerIdRef.current,
               sessionId: currentSession,
               attempt: scanAttemptRef.current++,
@@ -426,14 +709,24 @@ export const useScanner = ({
             [imageData.data.buffer],
           );
 
-          animationFrameId.current = requestAnimationFrame(scanTick);
-        } catch {
-          isWorkerBusy.current = false;
-          animationFrameId.current = requestAnimationFrame(scanTick);
+          captureFailureCountRef.current = 0;
+          scheduleNextFrame();
+        } catch (error) {
+          clearPendingWorkerRequest();
+          captureFailureCountRef.current += 1;
+          if (captureFailureCountRef.current >= MAX_CONSECUTIVE_CAPTURE_FAILURES) {
+            handleStopScan();
+            const cause = toError(error, "Unknown camera frame capture error");
+            onErrorRef.current?.(
+              new Error(`Camera frame capture failed repeatedly: ${cause.message}`),
+            );
+            return;
+          }
+          scheduleNextFrame();
         }
-      };
+      }
 
-      animationFrameId.current = requestAnimationFrame(scanTick);
+      scheduleNextFrame();
     } catch (error) {
       if (
         currentSession !== scanSessionRef.current ||
@@ -447,11 +740,14 @@ export const useScanner = ({
     }
   }, [
     scannerState.facingMode,
+    cancelScheduledFrame,
     handleStopScan,
     refreshCameraAvailability,
+    clearPendingWorkerRequest,
+    normalizedScanInterval,
     releaseCamera,
     releaseStream,
-    scanInterval,
+    watchActiveStream,
   ]);
 
   /**
@@ -467,6 +763,7 @@ export const useScanner = ({
     let stream: MediaStream | null = null;
 
     try {
+      clearPendingWorkerRequest();
       releaseCamera();
 
       const mediaConstraints = await getMediaConstraints(newFacingMode);
@@ -496,6 +793,7 @@ export const useScanner = ({
       }
 
       activeStreamRef.current = stream;
+      watchActiveStream(stream, currentSession);
       videoRef.current.srcObject = stream;
       await videoRef.current.play();
 
@@ -515,6 +813,9 @@ export const useScanner = ({
         isTorchOn: false,
         isTorchSupported,
       }));
+      captureAttemptRef.current = 0;
+      captureFailureCountRef.current = 0;
+      videoReadinessStartedAtRef.current = null;
       void refreshCameraAvailability(currentSession);
     } catch (error) {
       if (
@@ -530,19 +831,27 @@ export const useScanner = ({
   }, [
     scannerState.facingMode,
     scannerState.isScanning,
+    clearPendingWorkerRequest,
     handleStopScan,
     refreshCameraAvailability,
     releaseCamera,
     releaseStream,
+    watchActiveStream,
   ]);
 
   /**
    * Toggle the torch/flash
    */
   const handleToggleTorch = useCallback(async () => {
+    const stream = videoRef.current?.srcObject as MediaStream | null;
+    const track = stream?.getVideoTracks()?.[0];
+    const sessionId = scanSessionRef.current;
+    const cameraRequest = cameraRequestRef.current;
+
     try {
-      const track = (videoRef.current?.srcObject as MediaStream)?.getVideoTracks()?.[0];
-      const capabilities = track?.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
+      const capabilities = track?.getCapabilities?.() as MediaTrackCapabilities & {
+        torch?: boolean;
+      };
       if (!track || !capabilities?.torch) return;
 
       const newTorchState = !scannerState.isTorchOn;
@@ -551,8 +860,22 @@ export const useScanner = ({
       await track.applyConstraints({
         advanced: [{ torch: newTorchState } as unknown as MediaTrackConstraintSet],
       });
+      if (
+        sessionId !== scanSessionRef.current ||
+        cameraRequest !== cameraRequestRef.current ||
+        videoRef.current?.srcObject !== stream
+      ) {
+        return;
+      }
       setScannerState((prev) => ({ ...prev, isTorchOn: newTorchState }));
     } catch (error) {
+      if (
+        sessionId !== scanSessionRef.current ||
+        cameraRequest !== cameraRequestRef.current ||
+        videoRef.current?.srcObject !== stream
+      ) {
+        return;
+      }
       onErrorRef.current?.(error instanceof Error ? error : new Error("Failed to toggle torch"));
     }
   }, [scannerState.isTorchOn]);

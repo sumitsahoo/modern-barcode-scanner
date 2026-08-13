@@ -53,6 +53,35 @@ describe("FrameQualityEstimator", () => {
     expect(report.metrics.sharpness).toBeGreaterThan(20);
   });
 
+  it("does not alias barcode stripes that line up with the sampling grid", () => {
+    const report = new FrameQualityEstimator().evaluate(
+      createFrame(256, 256, (x) => (x % 4 < 2 ? 12 : 243)),
+    );
+
+    expect(report.acceptable).toBe(true);
+    expect(report.metrics.contrast).toBeGreaterThan(100);
+    expect(report.metrics.sharpness).toBeGreaterThan(20);
+  });
+
+  it("does not confuse a high-contrast white quiet zone with glare", () => {
+    const report = new FrameQualityEstimator().evaluate(
+      createFrame(128, 128, (x) => (x % 32 < 2 ? 0 : 255)),
+    );
+
+    expect(report.metrics.glare).toBeGreaterThan(0.9);
+    expect(report.metrics.contrast).toBeGreaterThan(50);
+    expect(report.issues).not.toContain("glare");
+  });
+
+  it("keeps sampling bounded for extremely narrow frames", () => {
+    const report = new FrameQualityEstimator().evaluate(
+      createFrame(1, 8192, (_x, y) => (y % 2 === 0 ? 12 : 243)),
+    );
+
+    expect(Number.isFinite(report.metrics.score)).toBe(true);
+    expect(report.metrics.contrast).toBeGreaterThan(100);
+  });
+
   it("identifies low contrast and blur without rejecting usable exposure alone", () => {
     const flat = new FrameQualityEstimator().evaluate(createFrame(64, 64, () => 128));
     const blurred = new FrameQualityEstimator().evaluate(createFrame(64, 64, (x) => 96 + x));
@@ -80,6 +109,20 @@ describe("FrameQualityEstimator", () => {
     expect(moving.metrics.motion).toBeGreaterThan(200);
   });
 
+  it("uses the aggregate score for compounded low-value frames", () => {
+    const estimator = new FrameQualityEstimator();
+    const first = createFrame(64, 64, (x) => (x < 32 ? 179 : 250));
+    const second = createFrame(64, 64, (x) => (x < 32 ? 250 : 179));
+
+    estimator.evaluate(first);
+    const report = estimator.evaluate(second);
+
+    expect(report.metrics.motion).toBe(71);
+    expect(report.metrics.score).toBeLessThan(0.33);
+    expect(report.issues).toContain("quality");
+    expect(report.issues).not.toContain("motion");
+  });
+
   it("resets its motion baseline", () => {
     const estimator = new FrameQualityEstimator();
     estimator.evaluate(checkerboard());
@@ -95,6 +138,13 @@ describe("FrameQualityEstimator", () => {
         width: 1,
         height: 1,
       } as ImageData),
+    ).toThrow("valid RGBA image data");
+    expect(() =>
+      new FrameQualityEstimator().evaluate({
+        data: new Uint8Array(4),
+        width: 1,
+        height: 1,
+      } as unknown as ImageData),
     ).toThrow("valid RGBA image data");
   });
 });

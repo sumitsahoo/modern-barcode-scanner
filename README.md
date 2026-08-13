@@ -113,7 +113,7 @@ function App() {
 
 Under the hood, this library uses its own pinned, reader-only ZXing-C++ WebAssembly build behind a modular decoder boundary. Both the **worker** and its **WebAssembly binary are inlined directly into the bundle** — the worker as a `Blob` and the `.wasm` inside a single-file Emscripten module.
 
-This means you do **not** need any special bundler setup: no `optimizeDeps` exclusions, no copying a worker file out of `node_modules`, and no rules to serve `.wasm` assets. Just install, import, and go — it works the same across Vite, webpack, Next.js, and other bundlers.
+This means the published package does **not** require a separately hosted worker or `.wasm` asset: install it, import it, and include its stylesheet. The production package path is exercised end to end in the browser test matrix. Applications with unusual bundle transforms or a restrictive Content Security Policy should retain the package's Blob worker and run the browser tests described below.
 
 > The trade-off is a larger main bundle (the WASM binary is embedded), in exchange for it working out of the box in any consumer with no setup.
 
@@ -352,7 +352,9 @@ The scanner targets current Chrome, Edge, Firefox, and Safari releases on deskto
 - Web Workers, WebAssembly, Canvas, and `requestAnimationFrame`.
 - A secure context. Use **HTTPS** in production (`localhost` is allowed for local development).
 
-Camera switching, torch, vibration, and audio feedback depend on device and browser support. Unsupported optional features degrade gracefully; use `onError` to surface permission, camera, worker, and torch failures to users.
+If your application enforces Content Security Policy, allow the package's self-contained Blob worker (normally `worker-src 'self' blob:`). Depending on browser and policy version, WebAssembly compilation may also require `script-src 'wasm-unsafe-eval'` or the broader legacy fallback `'unsafe-eval'`; start with the narrower directive and verify your supported browsers. The scanner does not use JavaScript `eval`, external worker files, or cross-origin `.wasm` fetches. When embedded in an iframe, grant camera access with `allow="camera"` and an appropriate `Permissions-Policy` response header.
+
+Camera switching, torch, vibration, and audio feedback depend on device and browser support. Unsupported optional features degrade gracefully; use `onError` to surface permission, camera, ended-stream, worker bootstrap/runtime/timeout, and torch failures to users. Camera dimensions are re-synchronized after metadata, orientation, resolution, and camera changes instead of relying on a startup snapshot.
 
 The scanner processes frames locally in the browser and does not upload camera data.
 
@@ -363,13 +365,15 @@ The scanner processes frames locally in the browser and does not upload camera d
 This library is built for speed and reliability:
 
 1. **Web Worker Processing**: Barcode detection runs entirely off the main thread.
-2. **Adaptive Frame Quality**: Samples motion, blur, contrast, exposure, and glare before spending work on WASM decoding.
+2. **Adaptive Frame Quality**: Uses a bounded, anti-aliasing luminance sample to score motion, blur, contrast, exposure, and glare before spending work on WASM decoding.
 3. **Viewfinder-First Detection**: Scans the smaller guided region first and restores a complete, deeper full-frame pass every fifth attempt.
 4. **Reusable WASM Frame Memory**: Grows the decoder input allocation only when needed and reuses it across scans.
 5. **Frame Throttling**: Configurable `scanInterval` balances detection latency with device battery and CPU usage.
-6. **Session Management**: Strictly prevents processing out-of-date or stale video frames.
+6. **Session Management**: Monotonic sessions and exact request IDs prevent late or duplicate worker responses from unlocking a newer frame.
 7. **Smart Downscaling**: Intelligently reduces image resolution for faster processing while maintaining read quality.
 8. **Canvas Optimizations**: Utilizes `willReadFrequently` and `desynchronized` rendering hints where supported.
+9. **Failure Recovery**: Readiness deadlines, bounded capture failures, worker response watchdogs, and camera-track lifecycle handling prevent silent scanning stalls.
+10. **Defensive WASM Boundary**: Both TypeScript and native code validate dimensions, byte lengths, heap ranges, engine results, and terminal decoder lifecycle state.
 
 ---
 
@@ -387,20 +391,20 @@ npm run dev
 
 ### Scripts
 
-| Script                     | Description                                                                     |
-| -------------------------- | ------------------------------------------------------------------------------- |
-| `npm run dev`              | Run the demo app with hot-module reload.                                        |
-| `npm run build`            | Build the library (ESM + CJS) and emit type declarations (`tsc`).               |
-| `npm run preview`          | Preview a production build of the demo.                                         |
-| `npm test`                 | Run the test suite once (Vitest + jsdom + Testing Library).                     |
-| `npm run lint`             | Lint the code with Oxlint.                                                      |
-| `npm run format`           | Format the code with Oxfmt.                                                     |
-| `npm run check`            | Format check + lint + type-check in a single command.                           |
-| `npm run typecheck`        | Type-check the library and the demo with `tsc`.                                 |
-| `npm run test:browser`     | Build, then test visual layouts, the worker, and a fake camera across browsers. |
-| `npm run engine:build`     | Rebuild the owned WASM engine from pinned source and toolchain inputs.          |
-| `npm run engine:verify`    | Verify checked-in decoder artifacts against their SHA-256 manifest.             |
-| `npm run fixtures:browser` | Regenerate deterministic QR fixtures used by the browser and fake-camera tests. |
+| Script                     | Description                                                                                 |
+| -------------------------- | ------------------------------------------------------------------------------------------- |
+| `npm run dev`              | Run the demo app with hot-module reload.                                                    |
+| `npm run build`            | Build the library (ESM + CJS) and emit type declarations (`tsc`).                           |
+| `npm run preview`          | Preview a production build of the demo.                                                     |
+| `npm test`                 | Run the test suite once (Vitest + jsdom + Testing Library).                                 |
+| `npm run lint`             | Lint the code with Oxlint.                                                                  |
+| `npm run format`           | Format the code with Oxfmt.                                                                 |
+| `npm run check`            | Format check + lint + type-check in a single command.                                       |
+| `npm run typecheck`        | Type-check the library and the demo with `tsc`.                                             |
+| `npm run test:browser`     | Build, then test visual layouts, the worker, and a fake camera across browsers.             |
+| `npm run engine:build`     | Rebuild the owned WASM engine from pinned source and toolchain inputs.                      |
+| `npm run engine:verify`    | Cross-check the native ABI, source/toolchain lock, SBOM, declaration, and artifact SHA-256. |
+| `npm run fixtures:browser` | Regenerate deterministic QR fixtures used by the browser and fake-camera tests.             |
 
 ### Demo
 
@@ -412,7 +416,7 @@ For deterministic responsive QA of the complete demo, use `?demo-state=<state>`,
 
 ### Testing
 
-Unit and integration tests live next to the source as `*.test.ts(x)` and run under Vitest (via `vp test`) in a jsdom environment, with [`@testing-library/react`](https://testing-library.com/) for component tests and independently generated real barcode fixtures for decoder tests. Playwright tests under `tests/browser` validate responsive desktop, portrait, compact, and short-landscape layouts; dark and reduced-motion preferences; keyboard focus containment; the production-style inline worker in Chromium, Firefox, and WebKit; and the built public package through the complete Chromium fake-camera pipeline. Pull requests and pushes to `dev` or `main` repeat the static, dependency, reproducible-engine, unit, browser, build, and package gates in CI. Run the primary local suites with `npm test` and `npm run test:browser`.
+Unit and integration tests live next to the source as `*.test.ts(x)` and run under Vitest (via `vp test`) in a jsdom environment, with [`@testing-library/react`](https://testing-library.com/) for component tests and independently generated real barcode fixtures for decoder tests. Playwright tests under `tests/browser` validate responsive desktop, portrait, compact, and short-landscape layouts; dark and reduced-motion preferences; keyboard focus containment; the production-style inline worker and transferable frame buffer in Chromium, Firefox, and WebKit; and the built public package through the complete Chromium fake-camera pipeline. Pull requests and pushes to `dev` or `main` repeat the static, dependency, fixed-platform reproducible-engine, unit, browser, build, and package gates in CI. Run the primary local suites with `npm test` and `npm run test:browser`.
 
 ---
 

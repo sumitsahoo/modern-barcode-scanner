@@ -56,7 +56,7 @@ The visual review is backed by browser assertions in `tests/browser/visual-layou
 - compact result-dialog sizing and focus containment;
 - dark-mode and reduced-motion behavior.
 
-The latest local verification completed 114 unit/integration tests and 15 Chromium, WebKit, and Chromium fake-camera browser tests. The configured Firefox project could not launch on the local macOS host and stalled before executing application code; CI retains Firefox coverage.
+The latest local verification completed 163 unit/integration tests in both default and serialized modes, plus 15 Chromium, WebKit, and Chromium fake-camera browser tests. The configured Firefox project could not launch on the local macOS host and stalled before executing application code; CI retains Firefox coverage.
 
 ## Reproducing the review
 

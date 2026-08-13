@@ -8,8 +8,10 @@ test("decodes in the production-style inline worker", async ({ page }) => {
 
   const result = await page.evaluate(() => window.__MBS_BROWSER_TEST__);
   expect(result.error).toBeUndefined();
+  expect(result.transferred).toBe(true);
   expect(result.response).toEqual({
     found: true,
+    requestId: 1,
     scannerId: 1,
     sessionId: 1,
     data: {
@@ -24,6 +26,7 @@ declare global {
     __MBS_BROWSER_TEST__?: {
       done: boolean;
       response?: unknown;
+      transferred?: boolean;
       error?: string;
     };
   }

@@ -3,17 +3,23 @@
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": "modern-barcode-scanner-barcode-engine",
-  "documentNamespace": "https://github.com/sumitsahoo/modern-barcode-scanner/sbom/barcode-engine-2026-08-12",
+  "documentNamespace": "https://github.com/sumitsahoo/modern-barcode-scanner/sbom/barcode-engine-abi2-2026-08-13",
   "creationInfo": {
-    "created": "2026-08-12T00:00:00Z",
+    "created": "2026-08-13T00:00:00Z",
     "creators": ["Tool: modern-barcode-scanner-build"]
   },
   "packages": [
     {
       "name": "modern-barcode-engine-binding",
       "SPDXID": "SPDXRef-Package-Binding",
-      "versionInfo": "1",
+      "versionInfo": "2",
       "downloadLocation": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "af13033b5bba99f40643b858eb6e1f82a881831ab76f0dea4273272420c9028a"
+        }
+      ],
       "filesAnalyzed": false,
       "licenseConcluded": "MIT",
       "licenseDeclared": "MIT",

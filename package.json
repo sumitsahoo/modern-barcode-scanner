@@ -56,7 +56,7 @@
     "build": "vp build && tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit && tsc --noEmit -p demo/tsconfig.json",
     "preview": "vp preview --config demo/vite.config.ts",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "npm run engine:verify && npm run build",
     "format": "vp fmt --write",
     "lint": "vp lint",
     "lint:fix": "vp lint --fix",
@@ -65,7 +65,7 @@
     "test:browser": "npm run build && playwright test",
     "test:browser:serve": "vp dev --config tests/browser/vite.config.ts",
     "engine:build": "./scripts/build-barcode-engine.sh",
-    "engine:verify": "cd src/decoders/zxing/generated && shasum -a 256 --check artifacts.sha256",
+    "engine:verify": "node scripts/verify-barcode-engine.mjs",
     "fixtures:browser": "node scripts/generate-browser-fixtures.mjs"
   },
   "devDependencies": {
