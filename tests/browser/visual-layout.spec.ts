@@ -26,6 +26,15 @@ const expectNoHorizontalOverflow = async (page: Page) => {
   expect(dimensions.scrollWidth).toBe(dimensions.clientWidth);
 };
 
+const rectanglesOverlap = (
+  first: { x: number; y: number; width: number; height: number },
+  second: { x: number; y: number; width: number; height: number },
+) =>
+  first.x < second.x + second.width &&
+  first.x + first.width > second.x &&
+  first.y < second.y + second.height &&
+  first.y + first.height > second.y;
+
 test("visual audit cards fit desktop and mobile viewports", async ({ page }) => {
   for (const viewport of hallmarkViewports) {
     await page.setViewportSize(viewport);
@@ -156,14 +165,21 @@ test("active scanner controls remain usable in portrait and short landscape layo
 
     const stopButton = await page.getByRole("button", { name: "Stop scanning" }).boundingBox();
     const cameraControls = await page.getByRole("group", { name: "Camera controls" }).boundingBox();
+    const viewfinder = await page.locator(".mbs-viewfinder-frame").boundingBox();
     expect(stopButton).not.toBeNull();
     expect(cameraControls).not.toBeNull();
-    const controlsOverlap =
-      stopButton!.x < cameraControls!.x + cameraControls!.width &&
-      stopButton!.x + stopButton!.width > cameraControls!.x &&
-      stopButton!.y < cameraControls!.y + cameraControls!.height &&
-      stopButton!.y + stopButton!.height > cameraControls!.y;
-    expect(controlsOverlap).toBe(false);
+    expect(viewfinder).not.toBeNull();
+    expect(rectanglesOverlap(stopButton!, cameraControls!)).toBe(false);
+
+    for (const overlay of [
+      await page.locator(".demo-header").boundingBox(),
+      await page.locator(".demo-theme-control").boundingBox(),
+      stopButton,
+      cameraControls,
+    ]) {
+      expect(overlay).not.toBeNull();
+      expect(rectanglesOverlap(viewfinder!, overlay!)).toBe(false);
+    }
   }
 });
 
@@ -177,7 +193,7 @@ test("viewfinder uses balanced technical brackets without leaving the viewport",
     const metrics = await page.locator(".mbs-viewfinder-frame").evaluate((frame) => {
       const rectangle = frame.getBoundingClientRect();
       const frameStyles = getComputedStyle(frame);
-      const corners = getComputedStyle(frame, "::before").backgroundImage;
+      const cornerStyles = getComputedStyle(frame, "::before");
       const calibrationTicks = getComputedStyle(frame, "::after").backgroundImage;
       const scanLine = getComputedStyle(frame.querySelector(".mbs-scan-line")!);
 
@@ -185,7 +201,9 @@ test("viewfinder uses balanced technical brackets without leaving the viewport",
         bottom: rectangle.bottom,
         borderWidth: frameStyles.borderTopWidth,
         calibrationTickCount: calibrationTicks.match(/linear-gradient/g)?.length ?? 0,
-        cornerSegmentCount: corners.match(/linear-gradient/g)?.length ?? 0,
+        cornerBorderRadius: cornerStyles.borderTopLeftRadius,
+        cornerBorderWidth: cornerStyles.borderTopWidth,
+        cornerMaskCount: cornerStyles.maskImage.match(/linear-gradient/g)?.length ?? 0,
         left: rectangle.left,
         right: rectangle.right,
         scanLineHeight: scanLine.height,
@@ -198,7 +216,9 @@ test("viewfinder uses balanced technical brackets without leaving the viewport",
     expect(metrics.right).toBeLessThanOrEqual(viewport.width);
     expect(metrics.bottom).toBeLessThanOrEqual(viewport.height);
     expect(metrics.borderWidth).toBe("1px");
-    expect(metrics.cornerSegmentCount).toBe(8);
+    expect(metrics.cornerBorderRadius).not.toBe("0px");
+    expect(metrics.cornerBorderWidth).toBe("3px");
+    expect(metrics.cornerMaskCount).toBe(4);
     expect(metrics.calibrationTickCount).toBe(4);
     expect(metrics.scanLineHeight).toBe("1px");
   }

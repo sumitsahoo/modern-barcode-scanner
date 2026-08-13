@@ -1,9 +1,9 @@
-export interface BarcodePoint {
+interface BarcodePoint {
   x: number;
   y: number;
 }
 
-export interface BarcodePosition {
+interface BarcodePosition {
   topLeft: BarcodePoint;
   topRight: BarcodePoint;
   bottomRight: BarcodePoint;

@@ -140,23 +140,25 @@
 }
 
 .mbs-viewfinder-frame::before {
-  border-radius: var(--mbs-radius-frame);
-  background:
-    linear-gradient(var(--mbs-primary), var(--mbs-primary)) left top / var(--mbs-viewfinder-corner)
-      3px no-repeat,
-    linear-gradient(var(--mbs-primary), var(--mbs-primary)) right top / var(--mbs-viewfinder-corner)
-      3px no-repeat,
-    linear-gradient(var(--mbs-primary), var(--mbs-primary)) left bottom /
-      var(--mbs-viewfinder-corner) 3px no-repeat,
-    linear-gradient(var(--mbs-primary), var(--mbs-primary)) right bottom /
-      var(--mbs-viewfinder-corner) 3px no-repeat,
-    linear-gradient(var(--mbs-primary), var(--mbs-primary)) left top / 3px
+  border: 3px solid var(--mbs-primary);
+  border-radius: calc(var(--mbs-radius-frame) + 2px);
+  -webkit-mask:
+    linear-gradient(var(--mbs-primary) 0 0) left top / var(--mbs-viewfinder-corner)
       var(--mbs-viewfinder-corner) no-repeat,
-    linear-gradient(var(--mbs-primary), var(--mbs-primary)) right top / 3px
+    linear-gradient(var(--mbs-primary) 0 0) right top / var(--mbs-viewfinder-corner)
       var(--mbs-viewfinder-corner) no-repeat,
-    linear-gradient(var(--mbs-primary), var(--mbs-primary)) left bottom / 3px
+    linear-gradient(var(--mbs-primary) 0 0) left bottom / var(--mbs-viewfinder-corner)
       var(--mbs-viewfinder-corner) no-repeat,
-    linear-gradient(var(--mbs-primary), var(--mbs-primary)) right bottom / 3px
+    linear-gradient(var(--mbs-primary) 0 0) right bottom / var(--mbs-viewfinder-corner)
+      var(--mbs-viewfinder-corner) no-repeat;
+  mask:
+    linear-gradient(var(--mbs-primary) 0 0) left top / var(--mbs-viewfinder-corner)
+      var(--mbs-viewfinder-corner) no-repeat,
+    linear-gradient(var(--mbs-primary) 0 0) right top / var(--mbs-viewfinder-corner)
+      var(--mbs-viewfinder-corner) no-repeat,
+    linear-gradient(var(--mbs-primary) 0 0) left bottom / var(--mbs-viewfinder-corner)
+      var(--mbs-viewfinder-corner) no-repeat,
+    linear-gradient(var(--mbs-primary) 0 0) right bottom / var(--mbs-viewfinder-corner)
       var(--mbs-viewfinder-corner) no-repeat;
 }
 

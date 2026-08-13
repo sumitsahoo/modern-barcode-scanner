@@ -8,9 +8,9 @@ const MAX_GLARE_CONTRAST = 50;
 const MAX_MOTION_DELTA = 72;
 const MIN_FRAME_SCORE = 0.33;
 
-export type FrameQualityIssue = "blur" | "contrast" | "exposure" | "glare" | "motion" | "quality";
+type FrameQualityIssue = "blur" | "contrast" | "exposure" | "glare" | "motion" | "quality";
 
-export interface FrameQualityMetrics {
+interface FrameQualityMetrics {
   /** Weighted zero-to-one suitability score. */
   score: number;
   /** Standard deviation of sampled luminance values. */

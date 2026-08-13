@@ -6,9 +6,9 @@ const MAX_CONSECUTIVE_DECODE_ERRORS = 3;
 const MAX_TRACKED_SCANNERS = 16;
 const MAX_IMAGE_PIXELS = 32 * 1024 * 1024;
 
-export type ScanRegion = "full" | "viewfinder";
+type ScanRegion = "full" | "viewfinder";
 
-export interface ScanResult {
+interface ScanResult {
   typeName: string;
   scanData: string;
 }

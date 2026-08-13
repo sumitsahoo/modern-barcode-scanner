@@ -581,6 +581,13 @@ button {
 }
 
 @media (max-height: 36rem) and (orientation: landscape) {
+  .demo-app[data-camera-running="true"] .mbs-viewfinder-frame {
+    top: 48%;
+    left: 46%;
+    width: min(52%, 34rem);
+    height: calc(100% - 11rem);
+  }
+
   .demo-idle-copy {
     bottom: calc(var(--space-lg) + env(safe-area-inset-bottom));
     max-width: 24rem;
@@ -620,16 +627,4 @@ button {
   .demo-error-actions button:active {
     transform: none;
   }
-}
-
-.demo-sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
 }
