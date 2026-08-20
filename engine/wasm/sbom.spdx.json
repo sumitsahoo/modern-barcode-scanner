@@ -3,9 +3,9 @@
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": "modern-barcode-scanner-barcode-engine",
-  "documentNamespace": "https://github.com/sumitsahoo/modern-barcode-scanner/sbom/barcode-engine-abi2-2026-08-13",
+  "documentNamespace": "https://github.com/sumitsahoo/modern-barcode-scanner/sbom/barcode-engine-abi2-2026-08-19",
   "creationInfo": {
-    "created": "2026-08-13T00:00:00Z",
+    "created": "2026-08-19T00:00:00Z",
     "creators": ["Tool: modern-barcode-scanner-build"]
   },
   "packages": [
@@ -17,7 +17,7 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "af13033b5bba99f40643b858eb6e1f82a881831ab76f0dea4273272420c9028a"
+          "checksumValue": "a08748586cbebc750924165914feeb6adb0f19e13e6523407d6983192e39d207"
         }
       ],
       "filesAnalyzed": false,
@@ -47,6 +47,29 @@
           "referenceLocator": "pkg:github/zxing-cpp/zxing-cpp@v3.1.1"
         }
       ]
+    },
+    {
+      "name": "Emscripten",
+      "SPDXID": "SPDXRef-Package-Emscripten",
+      "versionInfo": "6.0.7",
+      "downloadLocation": "https://github.com/emscripten-core/emscripten/tree/4483d70a78098ed5d860dff2dc21f3025b2da2ee",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "4483d70a78098ed5d860dff2dc21f3025b2da2ee"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT OR NCSA",
+      "licenseDeclared": "MIT OR NCSA",
+      "copyrightText": "Copyright 2010 The Emscripten Authors",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/emscripten-core/emscripten@6.0.7"
+        }
+      ]
     }
   ],
   "relationships": [
@@ -59,6 +82,16 @@
       "spdxElementId": "SPDXRef-Package-Binding",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-Package-ZXingCpp"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Binding",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-Emscripten"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Emscripten",
+      "relationshipType": "BUILD_TOOL_OF",
+      "relatedSpdxElement": "SPDXRef-Package-Binding"
     }
   ]
 }

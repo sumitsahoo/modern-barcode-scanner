@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { normalizeDecodedBarcode, normalizeFormatName } from "./normalizeFormat";
+import { normalizeDecodedBarcode } from "./normalizeFormat";
 
 describe("normalizeFormatName", () => {
   it.each([
@@ -13,11 +13,11 @@ describe("normalizeFormatName", () => {
     ["PDF417", "PDF417"],
     ["Aztec Code", "AZTEC"],
   ])("maps %s to the stable public name %s", (input, expected) => {
-    expect(normalizeFormatName(input)).toBe(expected);
+    expect(normalizeDecodedBarcode(input, "").typeName).toBe(expected);
   });
 
   it("normalizes future engine format names deterministically", () => {
-    expect(normalizeFormatName("New Format-42")).toBe("NEWFORMAT42");
+    expect(normalizeDecodedBarcode("New Format-42", "").typeName).toBe("NEWFORMAT42");
   });
 
   it("preserves UPC-A and ISBN-13 behavior when ZXing reports their EAN equivalents", () => {
@@ -28,6 +28,14 @@ describe("normalizeFormatName", () => {
     expect(normalizeDecodedBarcode("EAN-13", "9780306406157")).toEqual({
       typeName: "ISBN13",
       scanData: "9780306406157",
+    });
+    expect(normalizeDecodedBarcode("EAN-13", "001234567890512")).toEqual({
+      typeName: "UPCA",
+      scanData: "01234567890512",
+    });
+    expect(normalizeDecodedBarcode("EAN-13", "978030640615751234")).toEqual({
+      typeName: "ISBN13",
+      scanData: "978030640615751234",
     });
   });
 
@@ -47,6 +55,13 @@ describe("normalizeFormatName", () => {
     expect(normalizeDecodedBarcode("UPC-E", "0099999999999")).toEqual({
       typeName: "UPCE",
       scanData: "0099999999999",
+    });
+  });
+
+  it("preserves a retail supplement while compacting expanded UPC-E", () => {
+    expect(normalizeDecodedBarcode("UPC-E", "001234500005812")).toEqual({
+      typeName: "UPCE",
+      scanData: "0123455812",
     });
   });
 });

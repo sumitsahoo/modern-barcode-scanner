@@ -1,10 +1,11 @@
 import { decodeFirstBarcode } from "../decoders/decodeBarcode";
+import { MAX_SCAN_DIMENSION } from "../constants/scanner";
 import { FrameQualityEstimator } from "../utils/frameQuality";
 
 const ENHANCED_SCAN_INTERVAL = 3;
 const MAX_CONSECUTIVE_DECODE_ERRORS = 3;
 const MAX_TRACKED_SCANNERS = 16;
-const MAX_IMAGE_PIXELS = 32 * 1024 * 1024;
+const MAX_IMAGE_PIXELS = MAX_SCAN_DIMENSION * MAX_SCAN_DIMENSION;
 
 type ScanRegion = "full" | "viewfinder";
 
@@ -160,6 +161,8 @@ const isValidImageData = (value: unknown): value is ImageData => {
     Number.isSafeInteger(height) &&
     (width as number) > 0 &&
     (height as number) > 0 &&
+    (width as number) <= MAX_SCAN_DIMENSION &&
+    (height as number) <= MAX_SCAN_DIMENSION &&
     Number.isSafeInteger(pixelCount) &&
     pixelCount <= MAX_IMAGE_PIXELS &&
     data.byteLength === pixelCount * 4
@@ -216,18 +219,22 @@ const processScan = async (
   if (!isCurrentRequest(scannerId, sessionId, requestId, scannerState)) return;
 
   try {
+    // Focused camera frames normally use a low-latency pass. Every third
+    // attempt and every periodic full frame enable deeper recovery options.
+    const tryHarder =
+      region === "full" || attempt % ENHANCED_SCAN_INTERVAL === ENHANCED_SCAN_INTERVAL - 1;
+
     if (region === "viewfinder") {
       const quality = scannerState.viewfinderQuality.evaluate(imageData);
-      if (!quality.acceptable) {
+      // Aggregate exposure/glare metrics can undervalue a valid code occupying
+      // a smaller part of a bright phone screen. Preserve one focused recovery
+      // pass every third attempt while still skipping the other low-value frames.
+      if (!quality.acceptable && !tryHarder) {
         completeRequest(message, scannerState, { found: false });
         return;
       }
     }
 
-    // Focused camera frames normally use a low-latency pass. Every third
-    // attempt and every periodic full frame enable deeper recovery options.
-    const tryHarder =
-      region === "full" || attempt % ENHANCED_SCAN_INTERVAL === ENHANCED_SCAN_INTERVAL - 1;
     const result = await decodeFirstBarcode(imageData, { tryHarder });
     if (!isCurrentRequest(scannerId, sessionId, requestId, scannerState)) return;
 
@@ -266,9 +273,66 @@ const processScan = async (
   }
 };
 
-// A single worker is shared across component instances. Serialize jobs so the
-// decoder's shared WASM scanner is never entered concurrently.
-let decodeQueue: Promise<void> = Promise.resolve();
+interface QueuedScan {
+  message: WorkerMessage;
+  scannerState: ScannerRuntimeState;
+}
+
+// A single worker is shared across component instances. Keep at most one
+// queued frame per scanner and enter the shared WASM decoder serially. This
+// releases superseded transferred buffers immediately instead of retaining
+// them in a promise chain during a cold module start or a slow decode.
+const queuedScans: QueuedScan[] = [];
+let isProcessingQueue = false;
+
+const discardQueuedScans = (scannerId: number): void => {
+  for (let index = queuedScans.length - 1; index >= 0; index--) {
+    if (queuedScans[index].message.scannerId === scannerId) queuedScans.splice(index, 1);
+  }
+};
+
+const reportUnexpectedScanFailure = (
+  message: WorkerMessage,
+  scannerState: ScannerRuntimeState,
+  error: unknown,
+): void => {
+  if (!isCurrentRequest(message.scannerId, message.sessionId, message.requestId, scannerState)) {
+    return;
+  }
+
+  try {
+    completeRequest(message, scannerState, {
+      found: false,
+      error: `Scanner worker failed: ${getErrorMessage(error)}`,
+    });
+  } catch {
+    // Posting can fail during worker teardown. The queue must still drain so
+    // no transferred frame remains retained by this worker instance.
+  }
+};
+
+const drainDecodeQueue = async (): Promise<void> => {
+  if (isProcessingQueue) return;
+  isProcessingQueue = true;
+
+  try {
+    while (queuedScans.length > 0) {
+      const job = queuedScans.shift();
+      if (!job) continue;
+
+      try {
+        await processScan(job.message, job.scannerState);
+      } catch (error) {
+        reportUnexpectedScanFailure(job.message, job.scannerState, error);
+      }
+    }
+  } finally {
+    isProcessingQueue = false;
+    // A message event can enqueue work between the final length check and the
+    // flag reset. Re-enter once so that race cannot strand the new frame.
+    if (queuedScans.length > 0) void drainDecodeQueue();
+  }
+};
 
 self.onmessage = ({ data }: MessageEvent<unknown>) => {
   const message = parseWorkerMessage(data);
@@ -287,22 +351,7 @@ self.onmessage = ({ data }: MessageEvent<unknown>) => {
   }
   if (!scannerState) return;
 
-  decodeQueue = decodeQueue
-    .then(
-      () => processScan(message, scannerState),
-      () => processScan(message, scannerState),
-    )
-    .catch((error: unknown) => {
-      if (isCurrentRequest(message.scannerId, message.sessionId, message.requestId, scannerState)) {
-        try {
-          completeRequest(message, scannerState, {
-            found: false,
-            error: `Scanner worker failed: ${getErrorMessage(error)}`,
-          });
-        } catch {
-          // Never leave the serialization queue rejected because posting an error
-          // response failed during worker teardown.
-        }
-      }
-    });
+  discardQueuedScans(message.scannerId);
+  queuedScans.push({ message, scannerState });
+  void drainDecodeQueue();
 };

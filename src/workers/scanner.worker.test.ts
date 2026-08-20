@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { PNG } from "pngjs";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 const decoderMock = vi.hoisted(() => ({
@@ -22,6 +25,25 @@ const checkerboardFrame = (): ImageData => {
     }
   }
   return { data, width, height } as ImageData;
+};
+
+const phoneScreenQrFrame = (): ImageData => {
+  const qr = PNG.sync.read(
+    readFileSync(resolve(process.cwd(), "tests/browser/public/fixtures/worker-qr.png")),
+  );
+  const width = 800;
+  const height = 800;
+  const data = new Uint8ClampedArray(width * height * 4).fill(255);
+  const left = Math.floor((width - qr.width) / 2);
+  const top = Math.floor((height - qr.height) / 2);
+
+  for (let row = 0; row < qr.height; row++) {
+    const sourceStart = row * qr.width * 4;
+    const targetStart = ((top + row) * width + left) * 4;
+    data.set(qr.data.subarray(sourceStart, sourceStart + qr.width * 4), targetStart);
+  }
+
+  return { data, width, height, colorSpace: "srgb" } as ImageData;
 };
 
 describe("scanner worker queue", () => {
@@ -125,6 +147,39 @@ describe("scanner worker queue", () => {
     await vi.waitFor(() => expect(decoderMock.decodeFirstBarcode).toHaveBeenCalledOnce());
     await vi.waitFor(() => expect(self.postMessage).toHaveBeenCalledTimes(2));
     expect(decoderMock.decodeFirstBarcode).toHaveBeenCalledWith(imageData, { tryHarder: true });
+  });
+
+  it("recovers a decodable QR on a bright phone screen by the third focused attempt", async () => {
+    const imageData = phoneScreenQrFrame();
+    expect(new FrameQualityEstimator().evaluate(imageData).acceptable).toBe(false);
+    decoderMock.decodeFirstBarcode.mockResolvedValue({
+      typeName: "QRCODE",
+      scanData: "modern-browser-worker",
+    });
+    self.postMessage = vi.fn();
+    const message: WorkerMessage = {
+      type: "scan",
+      scannerId: 110,
+      sessionId: 1,
+      requestId: 0,
+      imageData,
+      region: "viewfinder",
+    };
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      self.onmessage?.({ data: { ...message, attempt, requestId: attempt } } as MessageEvent);
+      await vi.waitFor(() => expect(self.postMessage).toHaveBeenCalledTimes(attempt + 1));
+    }
+
+    expect(decoderMock.decodeFirstBarcode).toHaveBeenCalledOnce();
+    expect(decoderMock.decodeFirstBarcode).toHaveBeenCalledWith(imageData, { tryHarder: true });
+    expect(self.postMessage).toHaveBeenLastCalledWith({
+      found: true,
+      scannerId: 110,
+      sessionId: 1,
+      requestId: 2,
+      data: { typeName: "QRCODE", scanData: "modern-browser-worker" },
+    });
   });
 
   it("absorbs an isolated raw engine exception and recovers on the next frame", async () => {
@@ -271,6 +326,58 @@ describe("scanner worker queue", () => {
     });
   });
 
+  it("rejects camera frames outside the bounded worker envelope", async () => {
+    decoderMock.decodeFirstBarcode.mockResolvedValue(null);
+    self.postMessage = vi.fn();
+
+    self.onmessage?.({
+      data: {
+        type: "scan",
+        scannerId: 108,
+        sessionId: 1,
+        requestId: 0,
+        imageData: {
+          data: new Uint8ClampedArray(1281 * 4),
+          width: 1281,
+          height: 1,
+        },
+      },
+    } as MessageEvent);
+
+    expect(self.postMessage).toHaveBeenCalledWith({
+      found: false,
+      scannerId: 108,
+      sessionId: 1,
+      requestId: 0,
+      error: "Invalid scanner worker request",
+    });
+    expect(decoderMock.decodeFirstBarcode).not.toHaveBeenCalled();
+
+    self.onmessage?.({
+      data: {
+        type: "scan",
+        scannerId: 108,
+        sessionId: 1,
+        requestId: 1,
+        imageData: {
+          data: new Uint8ClampedArray(1280 * 4),
+          width: 1280,
+          height: 1,
+        } as ImageData,
+        region: "full",
+      } satisfies WorkerMessage,
+    } as MessageEvent);
+
+    await vi.waitFor(() => expect(decoderMock.decodeFirstBarcode).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(self.postMessage).toHaveBeenCalledTimes(2));
+    expect(self.postMessage).toHaveBeenLastCalledWith({
+      found: false,
+      scannerId: 108,
+      sessionId: 1,
+      requestId: 1,
+    });
+  });
+
   it("drops superseded, duplicate, and older-session requests", async () => {
     let resolveFirst: ((value: null) => void) | undefined;
     const firstDecode = new Promise<null>((resolve) => {
@@ -303,6 +410,42 @@ describe("scanner worker queue", () => {
       scannerId: 105,
       sessionId: 2,
       requestId: 1,
+    });
+  });
+
+  it("coalesces repeated queued frames to the newest request", async () => {
+    let resolveFirst: ((value: null) => void) | undefined;
+    const firstDecode = new Promise<null>((resolve) => {
+      resolveFirst = resolve;
+    });
+    decoderMock.decodeFirstBarcode
+      .mockImplementationOnce(() => firstDecode)
+      .mockResolvedValueOnce(null);
+    self.postMessage = vi.fn();
+    const message: WorkerMessage = {
+      type: "scan",
+      scannerId: 109,
+      sessionId: 1,
+      requestId: 0,
+      imageData: checkerboardFrame(),
+      region: "full",
+    };
+
+    self.onmessage?.({ data: message } as MessageEvent);
+    await vi.waitFor(() => expect(decoderMock.decodeFirstBarcode).toHaveBeenCalledOnce());
+
+    for (let requestId = 1; requestId <= 100; requestId++) {
+      self.onmessage?.({ data: { ...message, requestId } } as MessageEvent);
+    }
+    resolveFirst?.(null);
+
+    await vi.waitFor(() => expect(decoderMock.decodeFirstBarcode).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(self.postMessage).toHaveBeenCalledOnce());
+    expect(self.postMessage).toHaveBeenCalledWith({
+      found: false,
+      scannerId: 109,
+      sessionId: 1,
+      requestId: 100,
     });
   });
 

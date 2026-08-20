@@ -1,9 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { FACING_MODE } from "../constants/camera";
-import { convertToGrayscale, getMediaConstraints, isPhone, stopAllTracks } from "./barcodeHelpers";
+import { getBestRearCamera, getMediaConstraints, isPhone, stopAllTracks } from "./barcodeHelpers";
 
 const setUserAgent = (value: string) => {
   Object.defineProperty(navigator, "userAgent", { value, configurable: true });
+};
+
+const setMediaDevices = (value: MediaDevices) => {
+  const original = Object.getOwnPropertyDescriptor(navigator, "mediaDevices");
+  Object.defineProperty(navigator, "mediaDevices", { configurable: true, value });
+  return () => {
+    if (original) Object.defineProperty(navigator, "mediaDevices", original);
+    else Reflect.deleteProperty(navigator, "mediaDevices");
+  };
 };
 
 describe("barcodeHelpers", () => {
@@ -30,39 +39,6 @@ describe("barcodeHelpers", () => {
     });
   });
 
-  describe("convertToGrayscale", () => {
-    it("converts RGBA to grayscale using the luminosity method", () => {
-      // 2x2 pixels: red, green, blue, white.
-      const data = new Uint8ClampedArray([
-        255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255,
-      ]);
-      const imageData = { data, width: 2, height: 2 } as ImageData;
-
-      const result = convertToGrayscale(imageData);
-
-      // gray = (R*77 + G*150 + B*29) >> 8
-      expect([result.data[0], result.data[1], result.data[2]]).toEqual([76, 76, 76]);
-      expect([result.data[4], result.data[5], result.data[6]]).toEqual([149, 149, 149]);
-      expect([result.data[8], result.data[9], result.data[10]]).toEqual([28, 28, 28]);
-      expect([result.data[12], result.data[13], result.data[14]]).toEqual([255, 255, 255]);
-    });
-
-    it("leaves the alpha channel untouched", () => {
-      const data = new Uint8ClampedArray([10, 20, 30, 200]);
-      const result = convertToGrayscale({ data, width: 1, height: 1 } as ImageData);
-      expect(result.data[3]).toBe(200);
-    });
-
-    it("mutates and returns the same ImageData reference", () => {
-      const imageData = {
-        data: new Uint8ClampedArray([100, 100, 100, 255]),
-        width: 1,
-        height: 1,
-      } as ImageData;
-      expect(convertToGrayscale(imageData)).toBe(imageData);
-    });
-  });
-
   describe("stopAllTracks", () => {
     it("stops every track in the stream", () => {
       const stop1 = vi.fn();
@@ -79,6 +55,78 @@ describe("barcodeHelpers", () => {
 
     it("is a no-op for a null stream", () => {
       expect(() => stopAllTracks(null)).not.toThrow();
+    });
+
+    it("continues cleanup when one track throws", () => {
+      const stopAfterFailure = vi.fn();
+      const stream = {
+        getTracks: () => [
+          {
+            stop: () => {
+              throw new DOMException("Track is already invalid", "InvalidStateError");
+            },
+          },
+          { stop: stopAfterFailure },
+        ],
+      } as unknown as MediaStream;
+
+      expect(() => stopAllTracks(stream)).not.toThrow();
+      expect(stopAfterFailure).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe("getBestRearCamera", () => {
+    it("returns null and releases permission media when enumeration fails", async () => {
+      const stop = vi.fn();
+      const stream = {
+        getTracks: () => [{ stop }],
+      } as unknown as MediaStream;
+      const restore = setMediaDevices({
+        getUserMedia: vi.fn(async () => stream),
+        enumerateDevices: vi.fn(async () => {
+          throw new DOMException("Enumeration blocked", "NotAllowedError");
+        }),
+      } as unknown as MediaDevices);
+
+      try {
+        await expect(getBestRearCamera()).resolves.toBeNull();
+        expect(stop).toHaveBeenCalledOnce();
+      } finally {
+        restore();
+      }
+    });
+
+    it("can select a rear camera when optional capabilities are unavailable", async () => {
+      const stopPermission = vi.fn();
+      const stopCamera = vi.fn();
+      const permissionStream = {
+        getTracks: () => [{ stop: stopPermission }],
+      } as unknown as MediaStream;
+      const cameraTrack = {
+        stop: stopCamera,
+        getSettings: () => ({ facingMode: "environment" }),
+      };
+      const cameraStream = {
+        getTracks: () => [cameraTrack],
+        getVideoTracks: () => [cameraTrack],
+      } as unknown as MediaStream;
+      const restore = setMediaDevices({
+        getUserMedia: vi
+          .fn()
+          .mockResolvedValueOnce(permissionStream)
+          .mockResolvedValueOnce(cameraStream),
+        enumerateDevices: vi.fn(async () => [
+          { kind: "videoinput", deviceId: "rear", label: "Back Camera" },
+        ]),
+      } as unknown as MediaDevices);
+
+      try {
+        await expect(getBestRearCamera()).resolves.toBe("rear");
+        expect(stopPermission).toHaveBeenCalledOnce();
+        expect(stopCamera).toHaveBeenCalledOnce();
+      } finally {
+        restore();
+      }
     });
   });
 

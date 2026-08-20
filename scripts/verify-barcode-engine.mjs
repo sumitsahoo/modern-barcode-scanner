@@ -31,6 +31,7 @@ const expectMatch = (label, value, pattern) => {
 
 const buildScript = readFileSync(paths.buildScript, "utf8");
 const binding = readFileSync(paths.binding, "utf8");
+const cmake = readFileSync(paths.cmake, "utf8");
 const declaration = readFileSync(paths.declaration, "utf8");
 const sourceLock = JSON.parse(readFileSync(paths.sourceLock, "utf8"));
 const sbom = JSON.parse(readFileSync(paths.sbom, "utf8"));
@@ -90,6 +91,7 @@ expectEqual(
 );
 const artifactPath = artifactRelativePath && join(repositoryRoot, artifactRelativePath);
 const artifactSha256 = artifactPath && sha256File(artifactPath);
+const artifact = artifactPath ? readFileSync(artifactPath, "utf8") : "";
 expectEqual("artifact manifest filename", manifestMatch?.[2], "mbs-barcode-reader.js");
 expectEqual("artifact manifest SHA-256", manifestMatch?.[1], artifactSha256);
 expectEqual("source lock artifact SHA-256", sourceLock.artifact?.sha256, artifactSha256);
@@ -98,6 +100,7 @@ const zxingPackage = sbom.packages?.find((entry) => entry.name === "ZXing-C++");
 const bindingPackage = sbom.packages?.find(
   (entry) => entry.name === "modern-barcode-engine-binding",
 );
+const emscriptenPackage = sbom.packages?.find((entry) => entry.name === "Emscripten");
 expectEqual("SBOM ZXing version", zxingPackage?.versionInfo, sourceLock.version);
 expectEqual("SBOM ZXing source URL", zxingPackage?.downloadLocation, sourceLock.sourceUrl);
 expectEqual("SBOM ZXing SHA-256", zxingPackage?.checksums?.[0]?.checksumValue, zxingSourceSha256);
@@ -110,6 +113,39 @@ expectEqual(
   artifactSha256,
 );
 expectEqual("SBOM ZXing checksum algorithm", zxingPackage?.checksums?.[0]?.algorithm, "SHA256");
+expectEqual("SBOM Emscripten version", emscriptenPackage?.versionInfo, emscriptenVersion);
+expectEqual(
+  "SBOM Emscripten source",
+  emscriptenPackage?.downloadLocation,
+  `https://github.com/emscripten-core/emscripten/tree/${sourceLock.toolchain?.upstreamCommit}`,
+);
+expectEqual("SBOM Emscripten license", emscriptenPackage?.licenseDeclared, "MIT OR NCSA");
+expectEqual(
+  "SBOM Emscripten checksum algorithm",
+  emscriptenPackage?.checksums?.[0]?.algorithm,
+  "SHA1",
+);
+expectEqual(
+  "SBOM Emscripten source checksum",
+  emscriptenPackage?.checksums?.[0]?.checksumValue,
+  sourceLock.toolchain?.upstreamCommit,
+);
+
+expectMatch(
+  "source lock Emscripten commit",
+  sourceLock.toolchain?.upstreamCommit ?? "",
+  /^[a-f0-9]{40}$/,
+);
+expectMatch(
+  "source lock container digest",
+  sourceLock.toolchain?.containerDigest ?? "",
+  /^sha256:[a-f0-9]{64}$/,
+);
+expectMatch(
+  "source lock container index digest",
+  sourceLock.toolchain?.containerIndexDigest ?? "",
+  /^sha256:[a-f0-9]{64}$/,
+);
 
 expectMatch(
   "generated declaration ABI",
@@ -119,9 +155,23 @@ expectMatch(
 expectMatch("native byte-length ABI", binding, /uint32_t bufferByteLength/);
 expectMatch("native heap-range validation", binding, /emscripten_get_heap_size\(\)/);
 expectMatch("native payload text mode", binding, /textMode\(ZXing::TextMode::Plain\)/);
+expectMatch(
+  "native retail supplement policy",
+  binding,
+  /eanAddOnSymbol\(ZXing::EanAddOnSymbol::Read\)/,
+);
+expectMatch("native damaged-result exclusion", binding, /returnErrors\(false\)/);
 expectMatch("native damaged-symbol recovery", binding, /if \(barcode\.error\(\)\)\s*return \{\};/);
 expectMatch("native ZXing error recovery", binding, /catch \(const ZXing::Error&\)/);
 expectMatch("native allocation propagation", binding, /catch \(const std::bad_alloc&\)/);
+expectMatch("ThinLTO engine optimization", cmake, /set\(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON\)/);
+expectMatch("minimized module API", cmake, /-sINCOMING_MODULE_JS_API=printErr/);
+expectMatch("embedded Emscripten license", cmake, /-sEMIT_EMSCRIPTEN_LICENSE=1/);
+expectMatch(
+  "generated Emscripten license marker",
+  artifact,
+  /@license[\s\S]{0,160}SPDX-License-Identifier: MIT/,
+);
 
 if (failures.length) {
   throw new Error(`Barcode engine verification failed:\n- ${failures.join("\n- ")}`);

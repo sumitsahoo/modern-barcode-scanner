@@ -72,6 +72,10 @@ ReadResult ReadBarcodeFromLuminance(
 			.tryRotate(tryHarder)
 			.tryInvert(tryHarder)
 			.tryDownscale(tryHarder)
+			// Preserve valid EAN/UPC 2- and 5-digit supplements instead of
+			// silently truncating retail payloads at the primary symbol.
+			.eanAddOnSymbol(ZXing::EanAddOnSymbol::Read)
+			.returnErrors(false)
 			.textMode(ZXing::TextMode::Plain)
 			.maxNumberOfSymbols(1);
 

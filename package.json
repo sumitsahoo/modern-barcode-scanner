@@ -62,6 +62,7 @@
     "lint:fix": "vp lint --fix",
     "check": "vp check && npm run typecheck",
     "test": "vp test run",
+    "benchmark:engine": "vp test bench benchmarks/zxing-decoder.bench.ts --run",
     "test:browser": "npm run build && playwright test",
     "test:browser:serve": "vp dev --config tests/browser/vite.config.ts",
     "engine:build": "./scripts/build-barcode-engine.sh",
@@ -75,13 +76,12 @@
     "@playwright/test": "1.62.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
-    "@types/bwip-js": "3.2.3",
     "@types/node": "^26.2.0",
     "@types/pngjs": "6.0.5",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
-    "@vitejs/plugin-react": "^6.0.5",
-    "bwip-js": "4.11.2",
+    "@vitejs/plugin-react": "^6.1.0",
+    "bwip-js": "4.11.4",
     "jsdom": "^30.0.1",
     "pngjs": "7.0.0",
     "react": "^19.2.8",
@@ -91,8 +91,8 @@
     "vite-plus": "0.2.9"
   },
   "peerDependencies": {
-    "react": ">=18.0.0",
-    "react-dom": ">=18.0.0"
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
   },
   "overrides": {
     "vite": "npm:@voidzero-dev/vite-plus-core@0.2.9"
@@ -105,7 +105,7 @@
     },
     "runtime": {
       "name": "node",
-      "version": "^20.19.0 || ^22.18.0 || >=24.11.0",
+      "version": "^22.22.2 || ^24.15.0 || >=26.0.0",
       "onFail": "error"
     }
   }

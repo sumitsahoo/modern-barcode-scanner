@@ -1,4 +1,4 @@
-import bwipjs from "bwip-js";
+import bwipjs from "bwip-js/node";
 import { PNG } from "pngjs";
 import { afterAll, describe, expect, it } from "vite-plus/test";
 import { decodeFirstBarcode } from "../decodeBarcode";
@@ -14,16 +14,14 @@ const FIXTURE_OVERRIDES: Readonly<Record<string, Record<string, unknown>>> = {
   databaromni: { height: 20 },
   databarexpanded: { height: 20 },
   databarlimited: { height: 20 },
+  ean13: { addongap: 10 },
   rectangularmicroqrcode: { version: "R7x43" },
+  upca: { addongap: 10 },
+  upce: { addongap: 10 },
 };
 
 const renderBarcode = async ({ bcid, text }: FixtureOptions): Promise<ImageData> => {
-  // @types/bwip-js trails the package's Promise API and generic renderer
-  // options, so keep the compatibility cast isolated to this fixture helper.
-  const render = bwipjs.toBuffer as unknown as (
-    options: Record<string, unknown>,
-  ) => Promise<Buffer>;
-  const encoded = await render({
+  const encoded = await bwipjs.toBuffer({
     bcid,
     text,
     scale: 4,
@@ -119,6 +117,18 @@ const cropCenter = (source: ImageData, ratio: number): ImageData => {
   return { data, width, height } as ImageData;
 };
 
+const centerOnWhiteCanvas = (source: ImageData, width: number, height: number): ImageData => {
+  const data = new Uint8ClampedArray(width * height * 4).fill(255);
+  const left = Math.floor((width - source.width) / 2);
+  const top = Math.floor((height - source.height) / 2);
+  for (let row = 0; row < source.height; row++) {
+    const sourceStart = row * source.width * 4;
+    const targetStart = ((top + row) * width + left) * 4;
+    data.set(source.data.subarray(sourceStart, sourceStart + source.width * 4), targetStart);
+  }
+  return { data, width, height, colorSpace: "srgb" } as ImageData;
+};
+
 const createDeterministicNoise = (
   width: number,
   height: number,
@@ -160,13 +170,20 @@ describe("first-party ZXing-C++ WASM corpus", () => {
     ["databarexpanded", "(01)09501101530003(10)ABC123", "DATABAR_EXP", "010950110153000310ABC123"],
     ["datamatrix", "modern-data-matrix", "DATAMATRIX", "modern-data-matrix"],
     ["pdf417", "modern-pdf417", "PDF417", "modern-pdf417"],
+    ["pdf417compact", "compact-pdf-417", "PDF417", "compact-pdf-417"],
     ["micropdf417", "modern-micro-pdf", "PDF417", "modern-micro-pdf"],
     ["azteccode", "modern-aztec", "AZTEC", "modern-aztec"],
+    ["aztecrune", "127", "AZTEC", "127"],
     ["microqrcode", "1234", "QRCODE", "1234"],
     ["rectangularmicroqrcode", "5678", "QRCODE", "5678"],
     ["telepen", "MODERN TELEPEN", "TELEPEN", "MODERN TELEPEN"],
     ["code32", "01234567", "CODE32", "A012345676"],
     ["maxicode", "modern-maxicode", "MAXICODE", "modern-maxicode"],
+    ["ean13", "5901234123457 12", "EAN13", "590123412345712"],
+    ["ean13", "5901234123457 51234", "EAN13", "590123412345751234"],
+    ["upca", "012345678905 12", "UPCA", "01234567890512"],
+    ["ean13", "9781565812314 51234", "ISBN13", "978156581231451234"],
+    ["upce", "01234558 12", "UPCE", "0123455812"],
   ])("decodes %s", async (bcid, text, typeName, scanData) => {
     const frame = await renderBarcode({ bcid, text });
     await expect(decodeFirstBarcode(frame, undefined, decoder)).resolves.toEqual({
@@ -195,6 +212,16 @@ describe("first-party ZXing-C++ WASM corpus", () => {
     await expect(
       decodeFirstBarcode(addScreenGlare(frame), { tryHarder: true }, decoder),
     ).resolves.toMatchObject({ scanData: "imperfect-phone-frame" });
+  });
+
+  it("decodes a valid QR occupying part of a bright phone-screen frame", async () => {
+    const qr = await renderBarcode({ bcid: "qrcode", text: "bright-phone-screen" });
+    const frame = centerOnWhiteCanvas(qr, 800, 800);
+
+    await expect(decodeFirstBarcode(frame, { tryHarder: false }, decoder)).resolves.toMatchObject({
+      typeName: "QRCODE",
+      scanData: "bright-phone-screen",
+    });
   });
 
   it("treats aggressively damaged symbols as clean misses and remains usable", async () => {

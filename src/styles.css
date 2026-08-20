@@ -16,12 +16,15 @@
   --mbs-text: oklch(24% 0.02 258);
   --mbs-text-secondary: oklch(45% 0.018 257);
   --mbs-control-bg: oklch(18% 0.018 258 / 0.82);
+  --mbs-control-opaque: oklch(18% 0.018 258);
   --mbs-control-hover: oklch(95% 0.008 250 / 0.18);
   --mbs-border: oklch(53% 0.21 256 / 0.2);
   --mbs-on-dark: oklch(96% 0.008 250);
   --mbs-scrim: oklch(12% 0.014 258 / 0.18);
   --mbs-shadow-soft: oklch(12% 0.014 258 / 0.28);
   --mbs-shadow-control: oklch(12% 0.014 258 / 0.32);
+  --mbs-cue-dark: oklch(8% 0.01 258 / 0.82);
+  --mbs-cue-light: oklch(98% 0.004 250 / 0.9);
   --mbs-font-mono: var(
     --font-mono,
     ui-monospace,
@@ -60,6 +63,7 @@
   align-items: center;
   overflow: hidden;
   isolation: isolate;
+  container: mbs-scanner / size;
   background:
     radial-gradient(circle at center, var(--mbs-bg-secondary) 0%, transparent 58%), var(--mbs-bg);
 }
@@ -76,11 +80,14 @@
 /* Placeholder icon */
 .mbs-placeholder-icon {
   position: absolute;
+  top: 50%;
+  left: 50%;
   z-index: 10;
-  width: clamp(5rem, 28%, 10rem);
+  width: clamp(80px, 28%, 160px);
   height: auto;
-  color: var(--mbs-primary);
-  opacity: 0.4;
+  transform: translate(-50%, -50%);
+  color: color-mix(in oklch, var(--mbs-primary) 72%, var(--mbs-text));
+  opacity: 0.78;
   filter: drop-shadow(0 0 20px var(--mbs-border));
 }
 
@@ -90,8 +97,8 @@
 
 @keyframes mbs-camera-starting {
   50% {
-    opacity: 0.68;
-    transform: scale(1.025);
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.025);
   }
 }
 
@@ -107,11 +114,13 @@
 /* Guided scan region */
 .mbs-viewfinder-frame {
   --mbs-viewfinder-corner: clamp(2rem, 8vw, 3.25rem);
+  --mbs-viewfinder-corner: clamp(2rem, 8cqw, 3.25rem);
   position: absolute;
   top: 44%;
   left: 50%;
   z-index: 25;
   width: min(calc(100% - clamp(3rem, 10vw, 10rem)), 64rem);
+  width: min(calc(100% - clamp(3rem, 10cqw, 10rem)), 64rem);
   height: min(60%, 36rem);
   transform: translate(-50%, -50%);
   border: 1px solid color-mix(in srgb, var(--mbs-primary) 34%, var(--mbs-on-dark));
@@ -140,7 +149,7 @@
 }
 
 .mbs-viewfinder-frame::before {
-  border: 3px solid var(--mbs-primary);
+  border: 1px solid var(--mbs-cue-dark);
   border-radius: calc(var(--mbs-radius-frame) + 2px);
   -webkit-mask:
     linear-gradient(var(--mbs-primary) 0 0) left top / var(--mbs-viewfinder-corner)
@@ -160,6 +169,9 @@
       var(--mbs-viewfinder-corner) no-repeat,
     linear-gradient(var(--mbs-primary) 0 0) right bottom / var(--mbs-viewfinder-corner)
       var(--mbs-viewfinder-corner) no-repeat;
+  box-shadow:
+    inset 0 0 0 1px var(--mbs-cue-light),
+    inset 0 0 0 3px var(--mbs-primary);
 }
 
 .mbs-viewfinder-frame::after {
@@ -176,7 +188,7 @@
   bottom: calc(100% + 0.75rem);
   left: 50%;
   width: max-content;
-  max-width: min(80vw, 22rem);
+  max-width: min(calc(100% - 1.5rem), 22rem);
   padding: 0.5rem 0.75rem;
   transform: translateX(-50%);
   border: 1px solid color-mix(in srgb, var(--mbs-on-dark) 16%, transparent);
@@ -193,18 +205,18 @@
 /* Controls container */
 .mbs-controls {
   position: absolute;
-  bottom: calc(1.25rem + env(safe-area-inset-bottom));
+  bottom: calc(min(1.25rem, 20px) + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 1rem;
+  gap: 16px;
   z-index: 30;
   background-color: var(--mbs-control-bg);
   border: 1px solid color-mix(in srgb, var(--mbs-on-dark) 12%, transparent);
   border-radius: var(--mbs-radius-frame);
-  padding: 0.5rem 1rem;
+  padding: 8px 16px;
   box-shadow: 0 1px 2px var(--mbs-shadow-control);
 }
 
@@ -213,8 +225,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 44px;
+  height: 44px;
   border-radius: var(--mbs-radius-control);
   border: none;
   background-color: color-mix(in srgb, var(--mbs-on-dark) 10%, transparent);
@@ -250,8 +262,8 @@
 
 /* Icon */
 .mbs-icon {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 24px;
+  height: 24px;
 }
 
 /* ============================================
@@ -262,6 +274,7 @@
 .mbs-scan-line-container {
   position: absolute;
   width: calc(100% - clamp(1.5rem, 5vw, 3rem));
+  width: calc(100% - clamp(1.5rem, 5cqw, 3rem));
   left: 50%;
   top: 10%;
   z-index: 1;
@@ -282,7 +295,10 @@
   width: 100%;
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--mbs-scan-color) 12% 88%, transparent);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--mbs-scan-color) 72%, transparent);
+  box-shadow:
+    0 -1px 0 var(--mbs-cue-dark),
+    0 1px 0 var(--mbs-cue-light),
+    0 0 8px color-mix(in srgb, var(--mbs-scan-color) 72%, transparent);
 }
 
 /* Trail effect below the scan line (follows as it moves down) */
@@ -291,6 +307,7 @@
   bottom: 0;
   width: 100%;
   height: clamp(1.5rem, 6vh, 3.5rem);
+  height: clamp(1.5rem, 12cqh, 3.5rem);
   background: linear-gradient(
     to bottom,
     transparent,
@@ -305,6 +322,7 @@
   top: 0;
   width: 100%;
   height: clamp(1.5rem, 6vh, 3.5rem);
+  height: clamp(1.5rem, 12cqh, 3.5rem);
   background: linear-gradient(
     to top,
     transparent,
@@ -397,6 +415,20 @@
   }
 }
 
+@media (max-width: 640px) and (max-height: 36rem) and (orientation: portrait) {
+  .mbs-viewfinder-frame {
+    top: 49%;
+    height: min(44%, 22rem);
+  }
+}
+
+@media (max-width: 640px) and (max-height: 34rem) and (orientation: portrait) {
+  .mbs-viewfinder-frame {
+    top: 46%;
+    height: min(40%, 18rem);
+  }
+}
+
 @media (max-height: 560px) and (orientation: landscape) {
   .mbs-viewfinder-frame {
     top: 46%;
@@ -407,13 +439,110 @@
   .mbs-viewfinder-hint {
     top: 0.75rem;
     bottom: auto;
+    z-index: 2;
+    background: var(--mbs-control-opaque);
+  }
+}
+
+/* Component-sized responsive rules override viewport fallbacks when supported. */
+@container mbs-scanner (max-width: 640px) {
+  .mbs-viewfinder-frame {
+    top: 50%;
+    width: calc(100% - 2rem);
+    height: min(48%, 25rem);
+    --mbs-radius-frame: 0.75rem;
+  }
+
+  .mbs-viewfinder-viewport {
+    border-radius: calc(var(--mbs-radius-frame) - 0.5rem);
+  }
+
+  .mbs-viewfinder-hint {
+    top: 0.75rem;
+    bottom: auto;
+    z-index: 2;
+    background: var(--mbs-control-opaque);
+  }
+}
+
+@container mbs-scanner (max-width: 640px) and (max-height: 576px) and (max-aspect-ratio: 1 / 1) {
+  .mbs-viewfinder-frame {
+    top: 49%;
+    height: min(44%, 22rem);
+  }
+}
+
+@container mbs-scanner (max-width: 640px) and (max-height: 544px) and (max-aspect-ratio: 1 / 1) {
+  .mbs-viewfinder-frame {
+    top: 46%;
+    height: min(40%, 18rem);
+  }
+}
+
+@container mbs-scanner (max-width: 640px) and (max-height: 400px) and (max-aspect-ratio: 1 / 1) {
+  .mbs-viewfinder-frame {
+    top: 39.5%;
+    height: min(33%, 8rem);
+  }
+}
+
+@container mbs-scanner (max-height: 560px) and (min-aspect-ratio: 1 / 1) {
+  .mbs-viewfinder-frame {
+    top: 46%;
+    width: min(72%, 44rem);
+    height: calc(100% - min(9rem, 144px));
+  }
+
+  .mbs-viewfinder-hint {
+    top: 0.75rem;
+    bottom: auto;
+    z-index: 2;
+    background: var(--mbs-control-opaque);
+  }
+}
+
+@container mbs-scanner (max-width: 640px) and (max-height: 480px) and (max-aspect-ratio: 1 / 1) {
+  .mbs-placeholder-icon {
+    top: 36%;
+  }
+}
+
+/* Decorative standby marks yield when enlarged text consumes the narrow layout. */
+@container mbs-scanner (max-width: 14rem) {
+  .mbs-placeholder-icon,
+  .mbs-viewfinder-hint {
+    visibility: hidden;
+  }
+}
+
+@container mbs-scanner (max-width: 14rem) and (max-height: 400px) and (max-aspect-ratio: 1 / 1) {
+  .mbs-viewfinder-frame {
+    top: 46%;
+    height: 18%;
   }
 }
 
 @media (forced-colors: active) {
+  .mbs-placeholder-icon {
+    color: CanvasText;
+    opacity: 1;
+    filter: none;
+  }
+
   .mbs-viewfinder-frame {
     border-color: CanvasText;
     box-shadow: none;
+  }
+
+  .mbs-viewfinder-frame::before {
+    border: 3px solid CanvasText;
+    box-shadow: none;
+  }
+
+  .mbs-viewfinder-hint {
+    border-color: CanvasText;
+    color: CanvasText;
+    background: Canvas;
   }
 
   .mbs-controls {
@@ -425,6 +554,16 @@
     border: 1px solid ButtonText;
     color: ButtonText;
     background: ButtonFace;
+  }
+
+  .mbs-scan-line {
+    background: CanvasText;
+    box-shadow: none;
+  }
+
+  .mbs-scan-line-trail-down,
+  .mbs-scan-line-trail-up {
+    display: none;
   }
 }
 

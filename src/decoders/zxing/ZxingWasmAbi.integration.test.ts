@@ -1,4 +1,4 @@
-import bwipjs from "bwip-js";
+import bwipjs from "bwip-js/node";
 import { PNG } from "pngjs";
 import { beforeAll, describe, expect, it } from "vite-plus/test";
 import createModernBarcodeModule, {
@@ -7,12 +7,41 @@ import createModernBarcodeModule, {
 
 const MAX_IMAGE_PIXELS = 32 * 1024 * 1024;
 
+const fillAdversarialLuminance = (
+  target: Uint8Array,
+  width: number,
+  height: number,
+  pattern: number,
+  initialSeed: number,
+) => {
+  let seed = initialSeed >>> 0;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const index = y * width + x;
+      seed = (Math.imul(seed, 1_664_525) + 1_013_904_223) >>> 0;
+      switch (pattern) {
+        case 0:
+          target[index] = 0;
+          break;
+        case 1:
+          target[index] = 255;
+          break;
+        case 2:
+          target[index] = (x + y) % 2 ? 255 : 0;
+          break;
+        case 3:
+          target[index] = x % 3 ? 255 : 0;
+          break;
+        default:
+          target[index] = seed >>> 24;
+      }
+    }
+  }
+};
+
 const renderQrLuminance = async (text: string) => {
-  const render = bwipjs.toBuffer as unknown as (
-    options: Record<string, unknown>,
-  ) => Promise<Buffer>;
   const png = PNG.sync.read(
-    await render({
+    await bwipjs.toBuffer({
       bcid: "qrcode",
       text,
       scale: 4,
@@ -133,6 +162,64 @@ describe("ZXing-C++ WebAssembly ABI", () => {
       ).toMatchObject({ format: "QR Code", text: payload, error: "" });
     } finally {
       module._free(pointer);
+    }
+  });
+
+  it("keeps adversarial dimensions and pixel patterns inside the recoverable path", async () => {
+    const dimensions = [
+      [1, 1],
+      [1, 257],
+      [257, 1],
+      [2, 2],
+      [7, 13],
+      [31, 47],
+      [64, 64],
+      [127, 91],
+      [193, 257],
+    ] as const;
+    const capacity = Math.max(...dimensions.map(([width, height]) => width * height));
+    const pointer = module._malloc(capacity);
+    expect(pointer).not.toBe(0);
+
+    try {
+      for (let round = 0; round < 5; round++) {
+        for (const [width, height] of dimensions) {
+          const byteLength = width * height;
+          const frame = module.HEAPU8.subarray(pointer, pointer + byteLength);
+          fillAdversarialLuminance(frame, width, height, round, round + width * 31 + height);
+
+          const result = module.readBarcodeFromLuminance(
+            pointer,
+            byteLength,
+            width,
+            height,
+            round % 2 === 0,
+            round % 2 === 0 ? "QR Code" : "",
+          );
+          expect(result.error).toBe("");
+        }
+      }
+    } finally {
+      module._free(pointer);
+    }
+
+    const recovery = await renderQrLuminance("adversarial-recovery");
+    const recoveryPointer = module._malloc(recovery.luminance.byteLength);
+    expect(recoveryPointer).not.toBe(0);
+    try {
+      module.HEAPU8.set(recovery.luminance, recoveryPointer);
+      expect(
+        module.readBarcodeFromLuminance(
+          recoveryPointer,
+          recovery.luminance.byteLength,
+          recovery.width,
+          recovery.height,
+          true,
+          "QR Code",
+        ),
+      ).toMatchObject({ format: "QR Code", text: "adversarial-recovery", error: "" });
+    } finally {
+      module._free(recoveryPointer);
     }
   });
 });

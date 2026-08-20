@@ -12,8 +12,7 @@ import { getMediaConstraints, playScanSound, stopAllTracks } from "../utils";
 import { getViewfinderSourceRegion } from "../utils/scanRegion";
 // The worker is inlined into the bundle (`?worker&inline`) so consumers of the
 // published library never have to resolve or copy a separate worker file —
-// it ships as a self-contained Blob inside the main JS. See GitHub issue re:
-// "service worker not loading / relative path in dist".
+// it ships as a self-contained Blob inside the main JS.
 import ScannerWorker from "../workers/scanner.worker.ts?worker&inline";
 import type { WorkerResponse } from "../workers/scanner.worker";
 
@@ -27,7 +26,7 @@ interface UseScannerOptions extends ScannerConfig {
   onStateChange?: (state: ScannerState) => void;
 }
 
-// Module-level Web Worker caching for React 18 Strict Mode compatibility
+// Module-level Web Worker caching for React Strict Mode mount replay.
 let sharedWorker: Worker | null = null;
 let workerRefCount = 0;
 let terminateTimeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -60,7 +59,7 @@ const replaceInvalidSharedWorker = (worker: Worker, error: Error): void => {
 const releaseSharedWorker = (): void => {
   workerRefCount--;
   if (workerRefCount <= 0) {
-    // Delay termination to handle React 18 Strict Mode double-invocations
+    // Delay termination to handle React Strict Mode mount replay.
     terminateTimeoutId = setTimeout(() => {
       if (workerRefCount <= 0 && sharedWorker) {
         sharedWorker.terminate();

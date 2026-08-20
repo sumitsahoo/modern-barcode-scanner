@@ -36,20 +36,23 @@ button {
   width: 100%;
   height: 100dvh;
   overflow: hidden;
+  container: demo-shell / size;
   color: var(--color-ink);
   background: var(--color-paper);
 }
 
 .demo-header {
   position: absolute;
-  top: max(var(--space-lg), env(safe-area-inset-top));
-  left: max(var(--space-lg), env(safe-area-inset-left));
+  top: max(min(var(--space-lg), 24px), env(safe-area-inset-top));
+  left: max(min(var(--space-lg), 24px), env(safe-area-inset-left));
   z-index: var(--z-raised);
   display: flex;
-  min-height: 3rem;
+  min-height: 48px;
+  max-width: calc(100% - 112px);
   align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-xs) var(--space-sm) var(--space-xs) var(--space-xs);
+  gap: min(var(--space-sm), 12px);
+  padding: min(var(--space-xs), 8px) min(var(--space-sm), 12px) min(var(--space-xs), 8px)
+    min(var(--space-xs), 8px);
   border: 1px solid var(--color-rule);
   border-radius: var(--radius-panel);
   color: var(--color-ink);
@@ -60,8 +63,8 @@ button {
 
 .demo-brand-mark {
   display: grid;
-  width: 2rem;
-  height: 2rem;
+  width: 32px;
+  height: 32px;
   flex: 0 0 auto;
   place-items: center;
   border-radius: var(--radius-control);
@@ -70,13 +73,14 @@ button {
 }
 
 .demo-brand-mark svg {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 20px;
+  height: 20px;
 }
 
 .demo-brand-copy {
   display: grid;
-  gap: var(--space-3xs);
+  min-width: 0;
+  gap: min(var(--space-3xs), 2px);
 }
 
 .demo-brand-copy h1,
@@ -94,7 +98,7 @@ button {
   font-weight: 600;
   line-height: 1.1;
   letter-spacing: -0.015em;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .demo-brand-title-compact {
@@ -121,16 +125,16 @@ button {
 
 .demo-theme-control {
   position: absolute;
-  top: max(var(--space-lg), env(safe-area-inset-top));
-  right: max(var(--space-lg), env(safe-area-inset-right));
+  top: max(min(var(--space-lg), 24px), env(safe-area-inset-top));
+  right: max(min(var(--space-lg), 24px), env(safe-area-inset-right));
   z-index: var(--z-raised);
   display: flex;
-  width: 3.25rem;
-  min-height: 3rem;
+  width: 52px;
+  min-height: 48px;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2xs);
-  padding: var(--space-xs);
+  gap: 4px;
+  padding: 8px;
   border: 1px solid var(--color-rule);
   border-radius: var(--radius-panel);
   color: var(--color-ink-2);
@@ -155,8 +159,8 @@ button {
 }
 
 .demo-theme-swatch {
-  width: 1rem;
-  height: 1rem;
+  width: 16px;
+  height: 16px;
   flex: 0 0 auto;
   border: 2px solid var(--color-paper-raised);
   border-radius: 50%;
@@ -165,15 +169,15 @@ button {
 }
 
 .demo-theme-icon {
-  width: 0.875rem;
-  height: 0.875rem;
+  width: 14px;
+  height: 14px;
   color: var(--color-muted);
 }
 
 .demo-idle-copy {
   position: absolute;
-  bottom: calc(9rem + env(safe-area-inset-bottom));
-  left: max(var(--space-lg), env(safe-area-inset-left));
+  bottom: calc(min(9rem, 144px) + env(safe-area-inset-bottom));
+  left: max(min(var(--space-lg), 24px), env(safe-area-inset-left));
   z-index: var(--z-raised);
   display: grid;
   max-width: min(32rem, calc(100% - (2 * var(--space-lg))));
@@ -206,7 +210,7 @@ button {
 
 .demo-primary-controls {
   position: absolute;
-  bottom: calc(var(--space-lg) + env(safe-area-inset-bottom));
+  bottom: calc(min(var(--space-lg), 24px) + env(safe-area-inset-bottom));
   left: 50%;
   z-index: var(--z-sticky);
   display: flex;
@@ -214,17 +218,17 @@ button {
 }
 
 .demo-app[data-camera-running="true"] .demo-primary-controls {
-  bottom: calc(5.75rem + env(safe-area-inset-bottom));
+  bottom: calc(min(5.75rem, 92px) + env(safe-area-inset-bottom));
 }
 
 .demo-scan-button {
   display: inline-flex;
-  min-width: 9.5rem;
-  min-height: 3.25rem;
+  min-width: 152px;
+  min-height: 52px;
   align-items: center;
   justify-content: center;
-  gap: var(--space-xs);
-  padding: var(--space-sm) var(--space-md);
+  gap: 8px;
+  padding: 12px 16px;
   border: 1px solid transparent;
   border-radius: var(--radius-control);
   font-size: var(--text-sm);
@@ -237,8 +241,8 @@ button {
 }
 
 .demo-scan-button svg {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 20px;
+  height: 20px;
 }
 
 .demo-scan-button.is-starting {
@@ -329,17 +333,20 @@ button {
 
 .demo-error {
   position: absolute;
-  right: max(var(--space-lg), env(safe-area-inset-right));
-  bottom: calc(var(--space-lg) + env(safe-area-inset-bottom));
-  left: max(var(--space-lg), env(safe-area-inset-left));
+  right: max(min(var(--space-lg), 24px), env(safe-area-inset-right));
+  bottom: calc(min(var(--space-lg), 24px) + env(safe-area-inset-bottom));
+  left: max(min(var(--space-lg), 24px), env(safe-area-inset-left));
   z-index: var(--z-toast);
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--space-sm);
-  width: min(44rem, calc(100% - (2 * var(--space-lg))));
+  gap: min(var(--space-sm), 12px);
+  width: min(704px, calc(100% - (2 * min(var(--space-lg), 24px))));
+  max-height: calc(100dvh - (2 * min(var(--space-lg), 24px)));
   margin-inline: auto;
-  padding: var(--space-sm);
+  padding: min(var(--space-sm), 12px);
+  overflow: auto;
+  overscroll-behavior: contain;
   border: 1px solid color-mix(in srgb, var(--color-error) 36%, var(--color-rule));
   border-radius: var(--radius-panel);
   color: var(--color-error-ink);
@@ -349,20 +356,22 @@ button {
 
 .demo-error-symbol {
   display: grid;
-  width: 2rem;
-  height: 2rem;
+  width: 32px;
+  height: 32px;
   place-items: center;
 }
 
 .demo-error-symbol svg {
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 28px;
+  height: 28px;
 }
 
 .demo-error-copy {
   display: grid;
   gap: var(--space-2xs);
   min-width: 0;
+  max-height: max(72px, calc(100dvh - 220px));
+  overflow: auto;
 }
 
 .demo-error-copy strong {
@@ -374,6 +383,8 @@ button {
 .demo-error-copy span {
   font-size: var(--text-sm);
   line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .demo-error-actions {
@@ -383,8 +394,8 @@ button {
 }
 
 .demo-error-actions button {
-  min-height: 2.75rem;
-  padding-inline: var(--space-sm);
+  min-height: 44px;
+  padding-inline: 12px;
   border: 1px solid transparent;
   border-radius: var(--radius-control);
   color: inherit;
@@ -403,9 +414,9 @@ button {
 .demo-dialog {
   position: fixed;
   inset: 0;
-  width: min(calc(100% - (2 * var(--space-lg))), 28rem);
+  width: min(calc(100% - (2 * min(var(--space-lg), 24px))), 448px);
   height: fit-content;
-  max-height: min(calc(100dvh - (2 * var(--space-lg))), 40rem);
+  max-height: min(calc(100dvh - (2 * min(var(--space-lg), 24px))), 640px);
   margin: auto;
   padding: 0;
   overflow: visible;
@@ -425,9 +436,9 @@ button {
   max-height: inherit;
   flex-direction: column;
   align-items: stretch;
-  gap: var(--space-md);
+  gap: min(var(--space-md), 16px);
   overflow: auto;
-  padding: clamp(var(--space-lg), 6vw, var(--space-xl));
+  padding: clamp(16px, 6vw, 40px);
   border: 1px solid var(--color-rule);
   border-radius: inherit;
   color: var(--color-ink);
@@ -436,8 +447,8 @@ button {
 
 .demo-dialog-icon {
   display: grid;
-  width: 3rem;
-  height: 3rem;
+  width: 48px;
+  height: 48px;
   place-items: center;
   border: 1px solid color-mix(in srgb, var(--demo-theme) 32%, var(--color-rule));
   border-radius: var(--radius-panel);
@@ -446,8 +457,8 @@ button {
 }
 
 .demo-dialog-icon svg {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 24px;
+  height: 24px;
 }
 
 .demo-dialog-heading {
@@ -467,9 +478,9 @@ button {
 .demo-result-data {
   display: block;
   width: 100%;
-  max-height: 10rem;
+  max-height: 160px;
   overflow: auto;
-  padding: var(--space-md);
+  padding: 16px;
   border: 1px solid var(--color-rule);
   border-radius: var(--radius-control);
   color: var(--color-ink-2);
@@ -482,12 +493,12 @@ button {
 .demo-dialog-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-sm);
+  gap: 12px;
 }
 
 .demo-button,
 .demo-text-button {
-  min-height: 2.75rem;
+  min-height: 44px;
   border-radius: var(--radius-control);
   font-size: var(--text-sm);
   font-weight: 600;
@@ -496,7 +507,7 @@ button {
 }
 
 .demo-button {
-  padding: var(--space-sm) var(--space-md);
+  padding: 12px 16px;
   border: 1px solid transparent;
   transition: transform var(--dur-micro) var(--ease-out);
 }
@@ -514,7 +525,7 @@ button {
 
 .demo-text-button {
   align-self: center;
-  padding-inline: var(--space-md);
+  padding-inline: 16px;
   border: 0;
   color: var(--color-muted);
   background: transparent;
@@ -526,21 +537,21 @@ button {
 @media (max-width: 34rem) {
   .demo-header,
   .demo-theme-control {
-    top: max(var(--space-md), env(safe-area-inset-top));
+    top: max(min(var(--space-md), 16px), env(safe-area-inset-top));
   }
 
   .demo-header {
-    left: max(var(--space-md), env(safe-area-inset-left));
+    left: max(min(var(--space-md), 16px), env(safe-area-inset-left));
   }
 
   .demo-theme-control {
-    right: max(var(--space-md), env(safe-area-inset-right));
+    right: max(min(var(--space-md), 16px), env(safe-area-inset-right));
   }
 
   .demo-idle-copy {
-    right: max(var(--space-md), env(safe-area-inset-right));
-    bottom: calc(7.75rem + env(safe-area-inset-bottom));
-    left: max(var(--space-md), env(safe-area-inset-left));
+    right: max(min(var(--space-md), 16px), env(safe-area-inset-right));
+    bottom: calc(min(7.75rem, 124px) + env(safe-area-inset-bottom));
+    left: max(min(var(--space-md), 16px), env(safe-area-inset-left));
     max-width: none;
   }
 
@@ -549,16 +560,17 @@ button {
   }
 
   .demo-error {
-    right: max(var(--space-md), env(safe-area-inset-right));
-    bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
-    left: max(var(--space-md), env(safe-area-inset-left));
+    right: max(min(var(--space-md), 16px), env(safe-area-inset-right));
+    bottom: calc(min(var(--space-md), 16px) + env(safe-area-inset-bottom));
+    left: max(min(var(--space-md), 16px), env(safe-area-inset-left));
     grid-template-columns: auto minmax(0, 1fr);
     width: auto;
+    max-height: calc(100dvh - (2 * min(var(--space-md), 16px)));
   }
 
   .demo-error-actions {
-    grid-column: 2;
-    justify-content: flex-start;
+    grid-column: 1 / -1;
+    justify-content: flex-end;
   }
 }
 
@@ -572,7 +584,7 @@ button {
   }
 
   .demo-theme-control {
-    width: 3rem;
+    width: 48px;
   }
 
   .demo-dialog-actions {
@@ -585,11 +597,12 @@ button {
     top: 48%;
     left: 46%;
     width: min(52%, 34rem);
-    height: calc(100% - 11rem);
+    height: calc(100% - min(11rem, 176px));
   }
 
   .demo-idle-copy {
-    bottom: calc(var(--space-lg) + env(safe-area-inset-bottom));
+    bottom: calc(min(var(--space-lg), 24px) + env(safe-area-inset-bottom));
+    width: calc(100% - 260px);
     max-width: 24rem;
   }
 
@@ -597,11 +610,88 @@ button {
     display: none;
   }
 
+  .demo-app[data-camera-running="true"] .demo-primary-controls,
   .demo-primary-controls {
-    right: max(var(--space-lg), env(safe-area-inset-right));
-    bottom: calc(var(--space-lg) + env(safe-area-inset-bottom));
+    right: max(min(var(--space-lg), 24px), env(safe-area-inset-right));
+    bottom: calc(min(var(--space-lg), 24px) + env(safe-area-inset-bottom));
     left: auto;
     transform: none;
+  }
+}
+
+@container demo-shell (max-height: 17rem) and (min-aspect-ratio: 1 / 1) {
+  .demo-brand-title-full {
+    display: none;
+  }
+
+  .demo-brand-title-compact {
+    display: inline;
+  }
+
+  .demo-app[data-camera-running="true"] .mbs-viewfinder-frame {
+    left: 60%;
+    width: min(42%, 34rem);
+  }
+
+  .mbs-placeholder-icon,
+  .mbs-viewfinder-hint {
+    visibility: hidden;
+  }
+}
+
+@container demo-shell (max-width: 640px) and (max-height: 17rem) and (min-aspect-ratio: 1 / 1) {
+  .demo-app[data-camera-running="true"] .mbs-viewfinder-frame {
+    left: 69%;
+    width: min(32%, 34rem);
+  }
+}
+
+@media (max-height: 25rem) {
+  .demo-dialog {
+    max-height: calc(100dvh - 16px);
+  }
+
+  .demo-dialog-content {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .demo-dialog-icon {
+    display: none;
+  }
+
+  .demo-result-data {
+    max-height: 72px;
+    padding: 12px;
+  }
+}
+
+@container demo-shell (max-width: 14rem) {
+  .demo-brand-title-full {
+    display: none;
+  }
+
+  .demo-brand-title-compact {
+    display: inline;
+  }
+
+  .demo-idle-copy p,
+  .demo-idle-copy > span {
+    display: none;
+  }
+
+  .demo-dialog-content {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .demo-dialog-icon {
+    display: none;
+  }
+
+  .demo-result-data {
+    max-height: 72px;
+    padding: 12px;
   }
 }
 

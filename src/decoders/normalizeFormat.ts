@@ -42,7 +42,7 @@ const LEGACY_FORMAT_NAMES: Readonly<Record<string, string>> = {
 };
 
 /** Preserve the ZBar-shaped names already returned by the public API. */
-export const normalizeFormatName = (format: string): string => {
+const normalizeFormatName = (format: string): string => {
   const compactName = format.replace(/[^a-z0-9]/gi, "").toLowerCase();
   return LEGACY_FORMAT_NAMES[compactName] ?? compactName.toUpperCase();
 };
@@ -86,24 +86,48 @@ const compactUpce = (text: string): string | undefined => {
   return undefined;
 };
 
+const splitRetailSupplement = (
+  text: string,
+  baseLength: number,
+): { base: string; supplement: string } | undefined => {
+  if (!/^\d+$/.test(text)) return undefined;
+  const supplementLength = text.length - baseLength;
+  if (supplementLength !== 0 && supplementLength !== 2 && supplementLength !== 5) {
+    return undefined;
+  }
+  return { base: text.slice(0, baseLength), supplement: text.slice(baseLength) };
+};
+
 /** Normalize engine-specific aliases and retail-code representations. */
 export const normalizeDecodedBarcode = (format: string, text: string): NormalizedBarcode => {
   const typeName = normalizeFormatName(format);
 
   if (typeName === "UPCE") {
-    return { typeName, scanData: compactUpce(text) ?? text };
+    // ZXing can expose UPC-E as its expanded 13-digit EAN representation.
+    // Preserve an optional 2/5-digit retail supplement while compacting only
+    // the primary symbol back to the legacy public representation.
+    const expanded = splitRetailSupplement(text, 13);
+    if (expanded) {
+      return {
+        typeName,
+        scanData: `${compactUpce(expanded.base) ?? expanded.base}${expanded.supplement}`,
+      };
+    }
+    return { typeName, scanData: text };
   }
+
+  const ean13 = typeName === "EAN13" ? splitRetailSupplement(text, 13) : undefined;
 
   // ZXing-C++ represents UPC-A as its equivalent EAN-13 value with a leading
   // zero when both readers are enabled. ZBar returned UPC-A and 12 digits.
-  if (typeName === "EAN13" && /^0\d{12}$/.test(text)) {
-    return { typeName: "UPCA", scanData: text.slice(1) };
+  if (ean13 && /^0\d{12}$/.test(ean13.base)) {
+    return { typeName: "UPCA", scanData: `${ean13.base.slice(1)}${ean13.supplement}` };
   }
 
   // Bookland EAN values are ISBN-13 barcodes. Preserve the existing library's
   // ISBN type rather than exposing an engine-specific EAN alias.
-  if (typeName === "EAN13" && /^(?:978|979)\d{10}$/.test(text)) {
-    return { typeName: "ISBN13", scanData: text };
+  if (ean13 && /^(?:978|979)\d{10}$/.test(ean13.base)) {
+    return { typeName: "ISBN13", scanData: `${ean13.base}${ean13.supplement}` };
   }
 
   return { typeName, scanData: text };

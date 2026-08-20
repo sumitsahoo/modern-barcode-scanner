@@ -5,7 +5,7 @@ set -euo pipefail
 readonly ZXING_COMMIT="287c85df6f961c8efbfb5ffd736cd9457b8b890e"
 readonly ZXING_SOURCE_SHA256="97d952c661b1f79d21aacc2ec544ef05c4d1465f55692cc49622ea6a8166ca7b"
 readonly EMSCRIPTEN_PLATFORM="linux/amd64"
-readonly EMSCRIPTEN_IMAGE="docker.io/emscripten/emsdk:4.0.20@sha256:33e992367f721747d8008c9141c04fa017139e3557a60e0c80be93a0870fe462"
+readonly EMSCRIPTEN_IMAGE="docker.io/emscripten/emsdk:6.0.7@sha256:66f1ef34e9d2f91b3238284fd4c8f33c8eaa7fd3e4de44d52f92d62199f13c2b"
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly REPOSITORY_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"

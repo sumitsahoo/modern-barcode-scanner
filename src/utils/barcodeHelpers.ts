@@ -18,30 +18,6 @@ export const isPhone = (): boolean =>
   typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 /**
- * Convert color image data to grayscale using luminosity method
- * Optimized for performance using bitwise operations
- * @param imageData - Canvas ImageData object to convert
- * @returns Modified ImageData with grayscale values
- */
-export const convertToGrayscale = (imageData: ImageData): ImageData => {
-  const data = imageData.data;
-  const len = data.length;
-
-  // Optimized grayscale conversion using luminosity method
-  // More accurate than simple average and uses bitwise operations for speed
-  for (let i = 0; i < len; i += 4) {
-    // Luminosity method: 0.299*R + 0.587*G + 0.114*B
-    // Using bit shifts for faster multiplication approximation
-    const gray = (data[i] * 77 + data[i + 1] * 150 + data[i + 2] * 29) >> 8;
-    data[i] = gray;
-    data[i + 1] = gray;
-    data[i + 2] = gray;
-    // Alpha channel (data[i + 3]) remains unchanged
-  }
-  return imageData;
-};
-
-/**
  * Determine the best rear camera for scanning based on various criteria
  * Prioritizes: main/wide camera > torch support > highest resolution
  * Works across Android and iOS devices with multiple cameras
@@ -67,7 +43,12 @@ export const getBestRearCamera = async (): Promise<string | null> => {
     stopAllTracks(permissionStream);
   }
 
-  const devices = await navigator.mediaDevices.enumerateDevices();
+  let devices: MediaDeviceInfo[];
+  try {
+    devices = await navigator.mediaDevices.enumerateDevices();
+  } catch {
+    return null;
+  }
   const videoDevices = devices.filter((device) => device.kind === "videoinput");
 
   if (videoDevices.length === 0) return null;
@@ -83,10 +64,11 @@ export const getBestRearCamera = async (): Promise<string | null> => {
       });
 
       const videoTrack = stream.getVideoTracks()[0];
-      const capabilities = videoTrack.getCapabilities() as MediaTrackCapabilities & {
+      if (!videoTrack) continue;
+      const capabilities = (videoTrack.getCapabilities?.() ?? {}) as MediaTrackCapabilities & {
         torch?: boolean;
       };
-      const settings = videoTrack.getSettings();
+      const settings = videoTrack.getSettings?.() ?? {};
 
       // Skip front-facing cameras
       if (settings.facingMode === "user") continue;
@@ -173,5 +155,12 @@ export const getMediaConstraints = async (
  * @param stream - MediaStream to stop
  */
 export const stopAllTracks = (stream: MediaStream | null): void => {
-  for (const track of stream?.getTracks() ?? []) track.stop();
+  for (const track of stream?.getTracks() ?? []) {
+    try {
+      track.stop();
+    } catch {
+      // Continue releasing the remaining tracks when one browser-owned track
+      // is already invalid or throws during teardown.
+    }
+  }
 };
