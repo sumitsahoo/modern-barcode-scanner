@@ -1,6 +1,6 @@
 {
   "name": "modern-barcode-scanner",
-  "version": "1.0.4",
+  "version": "2.0.0",
   "description": "A high-performance React barcode scanner with an owned WebAssembly engine and capability-aware camera controls",
   "keywords": [
     "barcode",
