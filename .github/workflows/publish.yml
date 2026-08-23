@@ -19,23 +19,37 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24.x"
           registry-url: "https://registry.npmjs.org"
+          cache: "npm"
 
       # Install dependencies using npm ci for clean, deterministic installs
       - name: Install dependencies
         run: npm ci
 
-      # Build the package
-      - name: Build and lint
+      - name: Reproduce generated engine
         run: |
-          npm run lint
+          npm run engine:build
+          git diff --exit-code -- src/decoders/zxing/generated engine/wasm/source-lock.json engine/wasm/sbom.spdx.json
+          npm run engine:verify
+
+      - name: Install browser test runtimes
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      # Verify the exact package that will be published
+      - name: Audit, test, and build
+        run: |
+          npm audit --audit-level=high
+          npm run check
+          npm test
+          npm run test:browser
           npm run build
+          npm pack --dry-run
 
       # Publish using Trusted Publishing (--provenance)
       - name: Publish to npm

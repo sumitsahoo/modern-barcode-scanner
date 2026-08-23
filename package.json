@@ -1,7 +1,7 @@
 {
   "name": "modern-barcode-scanner",
-  "version": "1.0.3",
-  "description": "A high-performance barcode scanner React component with optimized detection, torch control, and camera switching",
+  "version": "1.0.4",
+  "description": "A high-performance React barcode scanner with an owned WebAssembly engine and capability-aware camera controls",
   "keywords": [
     "barcode",
     "camera",
@@ -10,7 +10,8 @@
     "react",
     "scanner",
     "web-worker",
-    "zbar"
+    "webassembly",
+    "zxing"
   ],
   "homepage": "https://github.com/sumitsahoo/modern-barcode-scanner#readme",
   "bugs": {
@@ -26,7 +27,14 @@
     "dist",
     "!dist/assets",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "licenses",
+    "THIRD_PARTY_NOTICES.md",
+    "docs/DESIGN_AUDIT.md",
+    "docs/DECODER_MIGRATION.md",
+    "docs/assets/scanner-idle.jpg",
+    "engine/wasm/source-lock.json",
+    "engine/wasm/sbom.spdx.json"
   ],
   "type": "module",
   "sideEffects": [
@@ -48,44 +56,57 @@
     "build": "vp build && tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit && tsc --noEmit -p demo/tsconfig.json",
     "preview": "vp preview --config demo/vite.config.ts",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "npm run engine:verify && npm run build",
     "format": "vp fmt --write",
     "lint": "vp lint",
     "lint:fix": "vp lint --fix",
     "check": "vp check && npm run typecheck",
-    "test": "vp test run"
-  },
-  "dependencies": {
-    "@undecaf/zbar-wasm": "^0.11.0"
+    "test": "vp test run",
+    "benchmark:engine": "vp test bench benchmarks/zxing-decoder.bench.ts --run",
+    "test:browser": "npm run build && playwright test",
+    "test:browser:serve": "vp dev --config tests/browser/vite.config.ts",
+    "engine:build": "./scripts/build-barcode-engine.sh",
+    "engine:verify": "node scripts/verify-barcode-engine.mjs",
+    "fixtures:browser": "node scripts/generate-browser-fixtures.mjs"
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "^6.9.1",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/space-grotesk": "^5.3.0",
+    "@playwright/test": "1.62.1",
+    "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
-    "@types/node": "^25.9.3",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.2",
-    "jsdom": "^29.1.1",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "typescript": "^6.0.3",
-    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
-    "vite-plus": "latest",
-    "vitest": "4.1.9"
+    "@types/node": "^26.2.0",
+    "@types/pngjs": "6.0.5",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "bwip-js": "4.11.4",
+    "jsdom": "^30.0.1",
+    "pngjs": "7.0.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "typescript": "^7.0.2",
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.9",
+    "vite-plus": "0.2.9"
   },
   "peerDependencies": {
-    "react": ">=18.0.0",
-    "react-dom": ">=18.0.0"
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
   },
   "overrides": {
-    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
-    "vitest": "4.1.9"
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.9"
   },
   "devEngines": {
     "packageManager": {
       "name": "npm",
       "version": ">=11.5.1",
       "onFail": "warn"
+    },
+    "runtime": {
+      "name": "node",
+      "version": "^22.22.2 || ^24.15.0 || >=26.0.0",
+      "onFail": "error"
     }
   }
 }

@@ -2,8 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle } from "react";
 import { useScanner } from "../hooks/useScanner";
 import { SCANNER_THEME } from "../constants/theme";
 import type { BarcodeScannerProps, BarcodeScannerRef, ScannerState } from "../types";
-import { isPhone } from "../utils/barcodeHelpers";
-import { IconCameraPlaceholder } from "./Icons";
+import { IconScanFrame } from "./Icons";
 import ScanLine from "./ScanLine";
 import ScannerControls from "./ScannerControls";
 
@@ -11,7 +10,7 @@ import ScannerControls from "./ScannerControls";
  * BarcodeScanner Component
  *
  * A high-performance barcode scanner React component with optimized detection.
- * Supports camera switching, torch control, and automatic phone detection.
+ * Supports capability-aware camera switching and torch control.
  *
  * @example
  * ```tsx
@@ -63,6 +62,7 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
       scannerState,
       videoRef,
       canvasRef,
+      viewfinderRef,
       handleScan,
       handleStopScan,
       handleSwitchCamera,
@@ -78,8 +78,8 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
       initialFacingMode,
     });
 
-    const { isScanning, facingMode, isTorchOn } = scannerState;
-    const isPhoneDevice = isPhone();
+    const { isStarting, isScanning, facingMode, isTorchOn, isTorchSupported, canSwitchCamera } =
+      scannerState;
 
     // Expose imperative methods via ref
     useImperativeHandle(
@@ -108,10 +108,19 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
     } as React.CSSProperties;
 
     return (
-      <div className={`mbs-container ${className}`} style={containerStyle}>
+      <div
+        className={`mbs-container ${className}`}
+        style={containerStyle}
+        data-scanning={isScanning}
+        data-state={isStarting ? "starting" : isScanning ? "scanning" : "stopped"}
+      >
         {/* Camera Feed */}
-        <section className="mbs-video-container" aria-label="Barcode scanner viewfinder">
-          <IconCameraPlaceholder className="mbs-placeholder-icon" />
+        <section
+          className="mbs-video-container"
+          aria-label="Barcode scanner viewfinder"
+          aria-busy={isStarting}
+        >
+          <IconScanFrame className="mbs-placeholder-icon" />
           <video
             title="Barcode Scanner"
             ref={videoRef}
@@ -120,21 +129,34 @@ const BarcodeScanner = forwardRef<BarcodeScannerRef, BarcodeScannerProps>(
             playsInline
             className="mbs-video"
           />
+          {isScanning && (
+            <div ref={viewfinderRef} className="mbs-viewfinder-frame" aria-hidden="true">
+              <div className="mbs-viewfinder-viewport">
+                <ScanLine visible={showScanLine} />
+              </div>
+              <span className="mbs-viewfinder-hint">Align the barcode inside the frame</span>
+            </div>
+          )}
         </section>
+
+        <span className="mbs-sr-only" role="status">
+          {isStarting
+            ? "Starting barcode scanner"
+            : isScanning
+              ? "Barcode scanner active"
+              : "Barcode scanner stopped"}
+        </span>
 
         {/* Hidden canvas for image processing */}
         <canvas ref={canvasRef} hidden />
-
-        {/* Scanning Animation Line */}
-        <ScanLine visible={isScanning && showScanLine} />
 
         {/* Camera Controls */}
         <ScannerControls
           isScanning={isScanning}
           isTorchOn={isTorchOn}
-          shouldShowRotateButton={showCameraSwitch && isScanning && isPhoneDevice}
+          shouldShowRotateButton={showCameraSwitch && isScanning && canSwitchCamera}
           shouldShowTorchButton={
-            showTorchButton && isScanning && isPhoneDevice && facingMode === "environment"
+            showTorchButton && isScanning && isTorchSupported && facingMode === "environment"
           }
           onSwitchCamera={handleSwitchCamera}
           onToggleTorch={handleToggleTorch}

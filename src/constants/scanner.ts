@@ -32,3 +32,9 @@ export const CANVAS_CONTEXT_OPTIONS: CanvasRenderingContext2DSettings = {
  * Downscaling improves performance without significantly affecting detection
  */
 export const MAX_SCAN_DIMENSION = 1280;
+
+/**
+ * Decode the complete camera frame periodically while prioritizing the
+ * smaller guided viewfinder region on the intervening attempts.
+ */
+export const FULL_FRAME_SCAN_INTERVAL = 5;

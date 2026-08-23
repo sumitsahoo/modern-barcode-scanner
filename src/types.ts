@@ -2,6 +2,7 @@
  * Type definitions for Modern Barcode Scanner
  */
 
+import type { CSSProperties } from "react";
 import type { FacingMode } from "./constants/camera";
 
 /**
@@ -18,12 +19,18 @@ export interface ScanResult {
  * Scanner state
  */
 export interface ScannerState {
+  /** Whether camera access is currently being requested */
+  isStarting: boolean;
   /** Whether the scanner is currently active */
   isScanning: boolean;
   /** Current camera facing mode */
   facingMode: FacingMode;
   /** Whether the torch/flash is on */
   isTorchOn: boolean;
+  /** Whether the active camera exposes torch control */
+  isTorchSupported: boolean;
+  /** Whether more than one video input is available */
+  canSwitchCamera: boolean;
 }
 
 /**
@@ -66,19 +73,19 @@ export interface ScannerConfig {
    */
   showScanLine?: boolean;
   /**
-   * Show camera switch button (only on phones)
+   * Show camera switch button when multiple cameras are available
    * @default true
    */
   showCameraSwitch?: boolean;
   /**
-   * Show torch/flash button (only on phones with back camera)
+   * Show torch/flash button when the active camera supports it
    * @default true
    */
   showTorchButton?: boolean;
   /**
    * Custom styles for the scanner container
    */
-  style?: React.CSSProperties;
+  style?: CSSProperties;
   /**
    * Primary theme color for the scanner UI
    * @default '#2563EB'

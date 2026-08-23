@@ -1,0 +1,53 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+  push:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Reproduce generated engine
+        run: |
+          npm run engine:build
+          git diff --exit-code -- src/decoders/zxing/generated engine/wasm/source-lock.json engine/wasm/sbom.spdx.json
+
+      - name: Audit dependencies and generated engine
+        run: |
+          npm audit --audit-level=high
+          npm run engine:verify
+
+      - name: Check and test
+        run: |
+          npm run check
+          npm test
+
+      - name: Install browser test runtimes
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Build and run browser matrix
+        run: npm run test:browser
+
+      - name: Verify package contents
+        run: npm pack --dry-run

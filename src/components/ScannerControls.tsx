@@ -25,7 +25,7 @@ const ScannerControls = ({
   if (!shouldShowRotateButton && !shouldShowTorchButton) return null;
 
   return (
-    <div className="mbs-controls">
+    <div className="mbs-controls" role="group" aria-label="Camera controls">
       {/* Rotate Camera Button */}
       {shouldShowRotateButton && (
         <button
@@ -33,6 +33,7 @@ const ScannerControls = ({
           className="mbs-control-btn"
           onClick={onSwitchCamera}
           aria-label="Switch camera"
+          title="Switch camera"
         >
           <IconRotateCamera className="mbs-icon" />
         </button>
@@ -45,6 +46,8 @@ const ScannerControls = ({
           className="mbs-control-btn"
           onClick={onToggleTorch}
           aria-label={isTorchOn ? "Turn off torch" : "Turn on torch"}
+          aria-pressed={isTorchOn}
+          title={isTorchOn ? "Turn off torch" : "Turn on torch"}
         >
           {isTorchOn ? <IconTorchOff className="mbs-icon" /> : <IconTorchOn className="mbs-icon" />}
         </button>

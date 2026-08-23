@@ -1,0 +1,15 @@
+{
+  "audience": "Developers and product teams evaluating the scanner in real browser conditions",
+  "use": "Start or stop the camera, understand scanner state, and act on scan results or recoverable errors",
+  "tone": "Precise, calm, technical",
+  "genre": "modern-minimal",
+  "macrostructure": "Workbench",
+  "theme": "Cobalt",
+  "enrichment": "none",
+  "navigation": "omitted for a full-screen embedded tool surface",
+  "footer": "omitted for a full-screen embedded tool surface",
+  "lockedBrand": "Existing cobalt scanner accent and Modern Barcode Scanner identity",
+  "fontDelivery": "Self-hosted Space Grotesk, Inter, and JetBrains Mono with swap behavior",
+  "verifiedAt": "2026-08-12T21:04:40+05:30",
+  "notes": "Design audit remediation; scanner behavior and camera implementation remain in scope and must not regress"
+}

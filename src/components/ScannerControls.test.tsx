@@ -62,6 +62,6 @@ describe("ScannerControls", () => {
         onToggleTorch={onToggleTorch}
       />,
     );
-    expect(screen.getByLabelText("Turn off torch")).toBeTruthy();
+    expect(screen.getByLabelText("Turn off torch")).toHaveAttribute("aria-pressed", "true");
   });
 });

@@ -1,0 +1,97 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "modern-barcode-scanner-barcode-engine",
+  "documentNamespace": "https://github.com/sumitsahoo/modern-barcode-scanner/sbom/barcode-engine-abi2-2026-08-23",
+  "creationInfo": {
+    "created": "2026-08-23T00:00:00Z",
+    "creators": ["Tool: modern-barcode-scanner-build"]
+  },
+  "packages": [
+    {
+      "name": "modern-barcode-engine-binding",
+      "SPDXID": "SPDXRef-Package-Binding",
+      "versionInfo": "2",
+      "downloadLocation": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "523ad104cfe8e1129cfe503f99f5b58c1070bec1be0d9bdb7960c015545e7413"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "copyrightText": "Copyright 2026 Modern Barcode Scanner contributors"
+    },
+    {
+      "name": "ZXing-C++",
+      "SPDXID": "SPDXRef-Package-ZXingCpp",
+      "versionInfo": "3.1.1",
+      "downloadLocation": "https://codeload.github.com/zxing-cpp/zxing-cpp/tar.gz/287c85df6f961c8efbfb5ffd736cd9457b8b890e",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "97d952c661b1f79d21aacc2ec544ef05c4d1465f55692cc49622ea6a8166ca7b"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/zxing-cpp/zxing-cpp@v3.1.1"
+        }
+      ]
+    },
+    {
+      "name": "Emscripten",
+      "SPDXID": "SPDXRef-Package-Emscripten",
+      "versionInfo": "6.0.8",
+      "downloadLocation": "https://github.com/emscripten-core/emscripten/tree/aeb67926e7de656da38bc807d83050af93578758",
+      "checksums": [
+        {
+          "algorithm": "SHA1",
+          "checksumValue": "aeb67926e7de656da38bc807d83050af93578758"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "MIT OR NCSA",
+      "licenseDeclared": "MIT OR NCSA",
+      "copyrightText": "Copyright 2010 The Emscripten Authors",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:github/emscripten-core/emscripten@6.0.8"
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-DOCUMENT",
+      "relationshipType": "DESCRIBES",
+      "relatedSpdxElement": "SPDXRef-Package-Binding"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Binding",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-ZXingCpp"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Binding",
+      "relationshipType": "DEPENDS_ON",
+      "relatedSpdxElement": "SPDXRef-Package-Emscripten"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-Emscripten",
+      "relationshipType": "BUILD_TOOL_OF",
+      "relatedSpdxElement": "SPDXRef-Package-Binding"
+    }
+  ]
+}

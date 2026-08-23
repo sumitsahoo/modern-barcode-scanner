@@ -1,56 +1,110 @@
-import type { SVGProps } from "react";
+/* Hallmark · component: scanner icon system · genre: modern-minimal · theme: Cobalt · grid: 24px · stroke: 1.75px */
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
+import type { ReactNode, SVGProps } from "react";
 
-export const IconRotateCamera = (props: SVGProps<SVGSVGElement>) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    strokeWidth={1.5}
-    stroke="currentColor"
-    {...props}
-  >
-    <title>Rotate Camera</title>
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
-    />
-  </svg>
-);
+type IconProps = SVGProps<SVGSVGElement>;
 
-export const IconTorchOn = (props: SVGProps<SVGSVGElement>) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
-    <title>Torch On</title>
-    <path
-      fillRule="evenodd"
-      d="M14.615 1.595a.75.75 0 01.359.852L12.982 9.75h7.268a.75.75 0 01.548 1.262l-10.5 11.25a.75.75 0 01-1.272-.71l1.992-7.302H3.75a.75.75 0 01-.548-1.262l10.5-11.25a.75.75 0 01.913-.143z"
-      clipRule="evenodd"
-    />
-  </svg>
-);
+interface IconBaseProps extends IconProps {
+  children: ReactNode;
+}
 
-export const IconTorchOff = (props: SVGProps<SVGSVGElement>) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
-    <title>Torch Off</title>
-    <path d="M3.27 3L2 4.27l5 5V13h3v9l3.58-6.14L17.73 20 19 18.73 3.27 3zM17 10h-4l4-8H7v2.18l8.46 8.46L17 10z" />
-  </svg>
-);
-
-export const IconCameraPlaceholder = (props: SVGProps<SVGSVGElement>) => (
+const IconBase = ({ children, ...props }: IconBaseProps) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
+    strokeWidth={1.75}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    focusable="false"
     {...props}
   >
-    <title>Camera Off</title>
-    {/* Camera body with slash through it */}
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={1.5}
-      d="M3 3L6.00007 6.00007M21 21L19.8455 19.8221M9.74194 4.06811C9.83646 4.04279 9.93334 4.02428 10.0319 4.01299C10.1453 4 10.2683 4 10.5141 4H13.5327C13.7786 4 13.9015 4 14.015 4.01299C14.6068 4.08078 15.1375 4.40882 15.4628 4.90782C15.5252 5.00345 15.5802 5.11345 15.6901 5.33333C15.7451 5.44329 15.7726 5.49827 15.8037 5.54609C15.9664 5.79559 16.2318 5.95961 16.5277 5.9935C16.5844 6 16.6459 6 16.7688 6H17.8234C18.9435 6 19.5036 6 19.9314 6.21799C20.3077 6.40973 20.6137 6.71569 20.8055 7.09202C21.0234 7.51984 21.0234 8.0799 21.0234 9.2V15.3496M19.8455 19.8221C19.4278 20 18.8702 20 17.8234 20H6.22344C5.10333 20 4.54328 20 4.11546 19.782C3.73913 19.5903 3.43317 19.2843 3.24142 18.908C3.02344 18.4802 3.02344 17.9201 3.02344 16.8V9.2C3.02344 8.0799 3.02344 7.51984 3.24142 7.09202C3.43317 6.71569 3.73913 6.40973 4.11546 6.21799C4.51385 6.015 5.0269 6.00103 6.00007 6.00007M19.8455 19.8221L14.5619 14.5619M14.5619 14.5619C14.0349 15.4243 13.0847 16 12 16C10.3431 16 9 14.6569 9 13C9 11.9153 9.57566 10.9651 10.4381 10.4381M14.5619 14.5619L10.4381 10.4381M10.4381 10.4381L6.00007 6.00007"
-    />
+    {children}
   </svg>
 );
+
+const CameraShape = () => (
+  <>
+    <path d="M4 10a2.5 2.5 0 0 1 2.5-2.5h1.25l1.5-2h5.5l1.5 2h1.25A2.5 2.5 0 0 1 20 10v6.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5V10Z" />
+    <circle cx="12" cy="13" r="3" />
+  </>
+);
+
+const TorchShape = () => (
+  <>
+    <path d="M8.25 3.75h7.5l-.9 4.5h-5.7l-.9-4.5Z" />
+    <path d="M9.5 8.25h5l-.65 12h-3.7l-.65-12Z" />
+    <path d="M10.25 12h3.5" />
+  </>
+);
+
+export const IconCamera = (props: IconProps) => (
+  <IconBase {...props}>
+    <CameraShape />
+  </IconBase>
+);
+
+export const IconCameraOff = (props: IconProps) => (
+  <IconBase {...props}>
+    <CameraShape />
+    <path d="M3.5 3.5 20.5 20.5" />
+  </IconBase>
+);
+
+export const IconRotateCamera = (props: IconProps) => (
+  <IconBase {...props}>
+    <path d="M6.75 7.25a7.5 7.5 0 0 1 11.5.5" />
+    <path d="M18.25 4.75v3h-3" />
+    <path d="M17.25 16.75a7.5 7.5 0 0 1-11.5-.5" />
+    <path d="M5.75 19.25v-3h3" />
+    <path d="M8.25 11.25a1 1 0 0 1 1-1h1l.75-1h2l.75 1h1a1 1 0 0 1 1 1v3.5a1 1 0 0 1-1 1h-5.5a1 1 0 0 1-1-1v-3.5Z" />
+    <circle cx="12" cy="13" r="1.25" />
+  </IconBase>
+);
+
+export const IconTorchOn = (props: IconProps) => (
+  <IconBase {...props}>
+    <TorchShape />
+    <path d="M6.5 4 5 2.5M17.5 4 19 2.5M12 1.75V.5" />
+  </IconBase>
+);
+
+export const IconTorchOff = (props: IconProps) => (
+  <IconBase {...props}>
+    <TorchShape />
+    <path d="M3.5 3.5 20.5 20.5" />
+  </IconBase>
+);
+
+export const IconCheck = (props: IconProps) => (
+  <IconBase {...props}>
+    <path d="m5.25 12.5 4.25 4.25L18.75 7" />
+  </IconBase>
+);
+
+export const IconAlert = (props: IconProps) => (
+  <IconBase {...props}>
+    <circle cx="12" cy="12" r="8" />
+    <path d="M12 8.25v5.25M12 16.75h.01" />
+  </IconBase>
+);
+
+export const IconScanFrame = (props: IconProps) => (
+  <IconBase {...props}>
+    <path d="M9 4.5H6.5a2 2 0 0 0-2 2V9M15 4.5h2.5a2 2 0 0 1 2 2V9M9 19.5H6.5a2 2 0 0 1-2-2V15M15 19.5h2.5a2 2 0 0 0 2-2V15" />
+    <path d="M9 9v6M12 9v6M15 9v6" />
+  </IconBase>
+);
+
+export const IconAdjustments = (props: IconProps) => (
+  <IconBase {...props}>
+    <path d="M4 6h4M12 6h8M4 12h9M17 12h3M4 18h2M10 18h10" />
+    <rect x="8" y="4.5" width="4" height="3" rx="0.75" />
+    <rect x="13" y="10.5" width="4" height="3" rx="0.75" />
+    <rect x="6" y="16.5" width="4" height="3" rx="0.75" />
+  </IconBase>
+);
+
+export const IconCameraPlaceholder = IconScanFrame;

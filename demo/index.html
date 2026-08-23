@@ -2,11 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#2563EB" />
     <meta
       name="description"
-      content="A high-performance barcode scanner React component with optimized detection, torch control, and camera switching"
+      content="A high-performance barcode scanner React component with optimized detection and capability-aware camera controls"
     />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -18,9 +18,14 @@
       #root {
         margin: 0;
         padding: 0;
+        width: 100%;
+        min-height: 100%;
+        overflow-x: clip;
+      }
+
+      #root {
         height: 100dvh;
-        overflow: hidden;
-        background: #0f1419;
+        overflow-y: hidden;
       }
     </style>
   </head>

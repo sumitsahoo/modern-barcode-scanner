@@ -1,0 +1,26 @@
+{
+  "engine": "ZXing-C++",
+  "version": "3.1.1",
+  "commit": "287c85df6f961c8efbfb5ffd736cd9457b8b890e",
+  "sourceUrl": "https://codeload.github.com/zxing-cpp/zxing-cpp/tar.gz/287c85df6f961c8efbfb5ffd736cd9457b8b890e",
+  "sourceSha256": "97d952c661b1f79d21aacc2ec544ef05c4d1465f55692cc49622ea6a8166ca7b",
+  "license": "Apache-2.0",
+  "artifact": {
+    "path": "src/decoders/zxing/generated/mbs-barcode-reader.js",
+    "sha256": "523ad104cfe8e1129cfe503f99f5b58c1070bec1be0d9bdb7960c015545e7413"
+  },
+  "inputs": {
+    "bindingSha256": "abd0c8d369e5c8621ac28f157e318dcf07a4aeeed83446aa7d43df8235fb770a",
+    "cmakeSha256": "84d8769cc0dd59994a79c1b5a0da6893fb0a8c34faf1d5f0f9c9c19e1f86732c",
+    "buildScriptSha256": "a19a895164d6a30b91c3e070d6795a36172723403cb18c0db260a43166b03bcc"
+  },
+  "toolchain": {
+    "name": "Emscripten SDK",
+    "version": "6.0.8",
+    "upstreamCommit": "aeb67926e7de656da38bc807d83050af93578758",
+    "container": "docker.io/emscripten/emsdk:6.0.8",
+    "platform": "linux/amd64",
+    "containerDigest": "sha256:8714ed3a9fb585e662c931259a996bac36a57a8dd34b81e8277436fd77364475",
+    "containerIndexDigest": "sha256:f174124ff798a3ead1abef247d9a849c270b642d552fea500a42565ff210f765"
+  }
+}

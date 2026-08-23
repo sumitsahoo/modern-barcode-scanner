@@ -21,11 +21,14 @@ export default defineConfig({
       },
       { find: /^modern-barcode-scanner$/, replacement: resolve(__dirname, "../src/index.ts") },
     ],
-    // Match the library build: use the WASM-inlined zbar build (see ../vite.config.ts).
-    conditions: ["zbar-inlined", "module", "browser", "development|production"],
   },
   worker: {
     format: "es",
+  },
+  build: {
+    // The scanner intentionally embeds its WASM runtime for zero-config use.
+    // Keep the demo build warning aligned with that documented trade-off.
+    chunkSizeWarningLimit: 1400,
   },
   server: {
     port: 8080,

@@ -1,46 +1,70 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · theme: Cobalt · enrichment: none · contrast: pass (40–41) · nav: omitted-tool-shell · footer: omitted-tool-shell · slop: pass (42–45) · honest: pass (46) · chrome: pass (47) · tokens: pass (48) · responsive: pass (49) · icons: pass (30) · mobile: pass (34, 49, 50–57) */
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
 /**
  * Modern Barcode Scanner - CSS Styles
  * Import this file to get default styling for the scanner component.
  */
 
-/* CSS Custom Properties - Light Mode (default) */
-:root {
-  --mbs-primary: #2563eb;
-  --mbs-primary-dark: #1d4ed8;
-  --mbs-scan-color: #ef4444;
-  --mbs-bg: #ffffff;
-  --mbs-bg-secondary: #f5f8ff;
-  --mbs-bg-card: rgba(255, 255, 255, 0.95);
-  --mbs-text: #1e293b;
-  --mbs-text-secondary: rgba(30, 41, 59, 0.7);
-  --mbs-control-bg: rgba(0, 0, 0, 0.5);
-  --mbs-control-hover: rgba(255, 255, 255, 0.2);
-  --mbs-border: rgba(37, 99, 235, 0.2);
+/* Component-scoped design tokens - Light Mode (default) */
+.mbs-container {
+  --mbs-primary: oklch(53% 0.21 256);
+  --mbs-scan-color: var(--mbs-primary);
+  --mbs-bg: oklch(98.5% 0.004 250);
+  --mbs-bg-secondary: oklch(95.5% 0.012 250);
+  --mbs-bg-card: oklch(99% 0.004 250 / 0.95);
+  --mbs-text: oklch(24% 0.02 258);
+  --mbs-text-secondary: oklch(45% 0.018 257);
+  --mbs-control-bg: oklch(18% 0.018 258 / 0.82);
+  --mbs-control-opaque: oklch(18% 0.018 258);
+  --mbs-control-hover: oklch(95% 0.008 250 / 0.18);
+  --mbs-border: oklch(53% 0.21 256 / 0.2);
+  --mbs-on-dark: oklch(96% 0.008 250);
+  --mbs-scrim: oklch(12% 0.014 258 / 0.18);
+  --mbs-shadow-soft: oklch(12% 0.014 258 / 0.28);
+  --mbs-shadow-control: oklch(12% 0.014 258 / 0.32);
+  --mbs-cue-dark: oklch(8% 0.01 258 / 0.82);
+  --mbs-cue-light: oklch(98% 0.004 250 / 0.9);
+  --mbs-font-mono: var(
+    --font-mono,
+    ui-monospace,
+    "SFMono-Regular",
+    Consolas,
+    "Liberation Mono",
+    monospace
+  );
+  --mbs-radius-control: 0.375rem;
+  --mbs-radius-frame: 0.875rem;
+  --mbs-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --mbs-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --mbs-dur-micro: 120ms;
+  --mbs-dur-short: 220ms;
 }
 
 /* CSS Custom Properties - Dark Mode */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --mbs-bg: #0f1419;
-    --mbs-bg-secondary: #1a2233;
-    --mbs-bg-card: rgba(26, 34, 51, 0.95);
-    --mbs-text: #e8eefc;
-    --mbs-text-secondary: rgba(232, 238, 252, 0.7);
-    --mbs-border: rgba(255, 255, 255, 0.1);
+  .mbs-container {
+    --mbs-bg: oklch(13% 0.014 258);
+    --mbs-bg-secondary: oklch(18% 0.016 258);
+    --mbs-bg-card: oklch(18% 0.016 258 / 0.95);
+    --mbs-text: oklch(95% 0.008 250);
+    --mbs-text-secondary: oklch(72% 0.018 250);
+    --mbs-border: oklch(95% 0.008 250 / 0.1);
   }
 }
 
 /* Container */
 .mbs-container {
-  position: absolute;
-  inset: 0;
+  position: relative;
   width: 100%;
   height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  background-color: var(--mbs-bg);
+  isolation: isolate;
+  container: mbs-scanner / size;
+  background:
+    radial-gradient(circle at center, var(--mbs-bg-secondary) 0%, transparent 58%), var(--mbs-bg);
 }
 
 /* Video container */
@@ -55,20 +79,25 @@
 /* Placeholder icon */
 .mbs-placeholder-icon {
   position: absolute;
+  top: 50%;
+  left: 50%;
   z-index: 10;
-  width: 40vw;
-  height: 40vw;
-  max-width: 200px;
-  max-height: 200px;
-  color: var(--mbs-primary);
-  opacity: 0.4;
-  filter: drop-shadow(0 0 20px rgba(37, 99, 235, 0.3));
+  width: clamp(80px, 28%, 160px);
+  height: auto;
+  transform: translate(-50%, -50%);
+  color: color-mix(in oklch, var(--mbs-primary) 72%, var(--mbs-text));
+  opacity: 0.78;
+  filter: drop-shadow(0 0 20px var(--mbs-border));
 }
 
-@media (min-width: 768px) {
-  .mbs-placeholder-icon {
-    width: 30vw;
-    height: 30vw;
+.mbs-container[data-state="starting"] .mbs-placeholder-icon {
+  animation: mbs-camera-starting 1.4s var(--mbs-ease-in-out) infinite;
+}
+
+@keyframes mbs-camera-starting {
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.025);
   }
 }
 
@@ -79,27 +108,115 @@
   object-fit: cover;
   position: relative;
   z-index: 20;
-  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.5));
+}
+
+/* Guided scan region */
+.mbs-viewfinder-frame {
+  --mbs-viewfinder-corner: clamp(2rem, 8vw, 3.25rem);
+  --mbs-viewfinder-corner: clamp(2rem, 8cqw, 3.25rem);
+  position: absolute;
+  top: 44%;
+  left: 50%;
+  z-index: 25;
+  width: min(calc(100% - clamp(3rem, 10vw, 10rem)), 64rem);
+  width: min(calc(100% - clamp(3rem, 10cqw, 10rem)), 64rem);
+  height: min(60%, 36rem);
+  transform: translate(-50%, -50%);
+  border: 1px solid color-mix(in srgb, var(--mbs-primary) 34%, var(--mbs-on-dark));
+  border-radius: var(--mbs-radius-frame);
+  background: color-mix(in srgb, var(--mbs-primary) 3%, transparent);
+  pointer-events: none;
+  box-shadow:
+    0 0 0 999vmax var(--mbs-scrim),
+    inset 0 0 0 1px color-mix(in srgb, var(--mbs-on-dark) 8%, transparent);
+}
+
+.mbs-viewfinder-viewport {
+  position: absolute;
+  inset: 0.5rem;
+  overflow: hidden;
+  border-radius: calc(var(--mbs-radius-frame) - 0.5rem);
+  container-type: size;
+}
+
+.mbs-viewfinder-frame::before,
+.mbs-viewfinder-frame::after {
+  position: absolute;
+  inset: -2px;
+  content: "";
+  pointer-events: none;
+}
+
+.mbs-viewfinder-frame::before {
+  border: 1px solid var(--mbs-cue-dark);
+  border-radius: calc(var(--mbs-radius-frame) + 2px);
+  -webkit-mask:
+    linear-gradient(var(--mbs-primary) 0 0) left top / var(--mbs-viewfinder-corner)
+      var(--mbs-viewfinder-corner) no-repeat,
+    linear-gradient(var(--mbs-primary) 0 0) right top / var(--mbs-viewfinder-corner)
+      var(--mbs-viewfinder-corner) no-repeat,
+    linear-gradient(var(--mbs-primary) 0 0) left bottom / var(--mbs-viewfinder-corner)
+      var(--mbs-viewfinder-corner) no-repeat,
+    linear-gradient(var(--mbs-primary) 0 0) right bottom / var(--mbs-viewfinder-corner)
+      var(--mbs-viewfinder-corner) no-repeat;
+  mask:
+    linear-gradient(var(--mbs-primary) 0 0) left top / var(--mbs-viewfinder-corner)
+      var(--mbs-viewfinder-corner) no-repeat,
+    linear-gradient(var(--mbs-primary) 0 0) right top / var(--mbs-viewfinder-corner)
+      var(--mbs-viewfinder-corner) no-repeat,
+    linear-gradient(var(--mbs-primary) 0 0) left bottom / var(--mbs-viewfinder-corner)
+      var(--mbs-viewfinder-corner) no-repeat,
+    linear-gradient(var(--mbs-primary) 0 0) right bottom / var(--mbs-viewfinder-corner)
+      var(--mbs-viewfinder-corner) no-repeat;
+  box-shadow:
+    inset 0 0 0 1px var(--mbs-cue-light),
+    inset 0 0 0 3px var(--mbs-primary);
+}
+
+.mbs-viewfinder-frame::after {
+  background:
+    linear-gradient(var(--mbs-on-dark), var(--mbs-on-dark)) center top / 1.25rem 1px no-repeat,
+    linear-gradient(var(--mbs-on-dark), var(--mbs-on-dark)) center bottom / 1.25rem 1px no-repeat,
+    linear-gradient(var(--mbs-on-dark), var(--mbs-on-dark)) left center / 1px 1.25rem no-repeat,
+    linear-gradient(var(--mbs-on-dark), var(--mbs-on-dark)) right center / 1px 1.25rem no-repeat;
+  opacity: 0.62;
+}
+
+.mbs-viewfinder-hint {
+  position: absolute;
+  bottom: calc(100% + 0.75rem);
+  left: 50%;
+  width: max-content;
+  max-width: min(calc(100% - 1.5rem), 22rem);
+  padding: 0.5rem 0.75rem;
+  transform: translateX(-50%);
+  border: 1px solid color-mix(in srgb, var(--mbs-on-dark) 16%, transparent);
+  border-radius: calc(var(--mbs-radius-control) - 0.125rem);
+  color: var(--mbs-on-dark);
+  background: var(--mbs-control-bg);
+  box-shadow: 0 1px 2px var(--mbs-shadow-soft);
+  font: 600 0.6875rem/1.25 var(--mbs-font-mono);
+  letter-spacing: 0.045em;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 /* Controls container */
 .mbs-controls {
   position: absolute;
-  bottom: 2rem;
+  bottom: calc(min(1.25rem, 20px) + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 1rem;
+  gap: 16px;
   z-index: 30;
   background-color: var(--mbs-control-bg);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 9999px;
-  padding: 0.5rem 1rem;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 1px solid color-mix(in srgb, var(--mbs-on-dark) 12%, transparent);
+  border-radius: var(--mbs-radius-frame);
+  padding: 8px 16px;
+  box-shadow: 0 1px 2px var(--mbs-shadow-control);
 }
 
 /* Control button */
@@ -107,23 +224,33 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--mbs-radius-control);
   border: none;
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
+  background-color: color-mix(in srgb, var(--mbs-on-dark) 10%, transparent);
+  color: var(--mbs-on-dark);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color var(--mbs-dur-short) var(--mbs-ease-out),
+    transform var(--mbs-dur-micro) var(--mbs-ease-out);
 }
 
-.mbs-control-btn:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
+@media (hover: hover) {
+  .mbs-control-btn:hover {
+    background-color: var(--mbs-control-hover);
+    transform: translateY(-1px);
+  }
 }
 
 .mbs-control-btn:active {
-  transform: scale(0.9);
+  transform: translateY(1px);
+}
+
+.mbs-control-btn:focus-visible {
+  outline: 3px solid var(--mbs-on-dark);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px var(--mbs-primary);
 }
 
 .mbs-control-btn:disabled {
@@ -134,8 +261,8 @@
 
 /* Icon */
 .mbs-icon {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 24px;
+  height: 24px;
 }
 
 /* ============================================
@@ -145,23 +272,32 @@
 /* Scan line container - the moving element */
 .mbs-scan-line-container {
   position: absolute;
-  width: 80%;
-  left: 10%;
-  top: 20%;
-  z-index: 40;
+  width: calc(100% - clamp(1.5rem, 5vw, 3rem));
+  width: calc(100% - clamp(1.5rem, 5cqw, 3rem));
+  left: 50%;
+  top: 10%;
+  z-index: 1;
   pointer-events: none;
-  animation: mbs-scan 2.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-  will-change: transform;
-  transform: translateZ(0);
+  transform: translateX(-50%);
   backface-visibility: hidden;
+}
+
+.mbs-scan-line-indicator {
+  position: relative;
+  width: 100%;
+  animation: mbs-scan 2.5s var(--mbs-ease-in-out) infinite;
+  will-change: transform;
 }
 
 /* The main scan line */
 .mbs-scan-line {
   width: 100%;
-  height: 2px;
-  background-color: var(--mbs-scan-color);
-  box-shadow: 0 0 15px 2px rgba(239, 68, 68, 0.8);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--mbs-scan-color) 12% 88%, transparent);
+  box-shadow:
+    0 -1px 0 var(--mbs-cue-dark),
+    0 1px 0 var(--mbs-cue-light),
+    0 0 8px color-mix(in srgb, var(--mbs-scan-color) 72%, transparent);
 }
 
 /* Trail effect below the scan line (follows as it moves down) */
@@ -169,8 +305,13 @@
   position: absolute;
   bottom: 0;
   width: 100%;
-  height: 6rem;
-  background: linear-gradient(to bottom, transparent, var(--mbs-scan-color));
+  height: clamp(1.5rem, 6vh, 3.5rem);
+  height: clamp(1.5rem, 12cqh, 3.5rem);
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--mbs-scan-color) 28%, transparent)
+  );
   animation: mbs-trail-down 2.5s linear infinite;
 }
 
@@ -179,21 +320,25 @@
   position: absolute;
   top: 0;
   width: 100%;
-  height: 6rem;
-  background: linear-gradient(to top, transparent, var(--mbs-scan-color));
+  height: clamp(1.5rem, 6vh, 3.5rem);
+  height: clamp(1.5rem, 12cqh, 3.5rem);
+  background: linear-gradient(
+    to top,
+    transparent,
+    color-mix(in srgb, var(--mbs-scan-color) 28%, transparent)
+  );
   animation: mbs-trail-up 2.5s linear infinite;
 }
 
-/* Scan animation keyframes - matches original with 45vh movement */
+/* The animation is positioned inside the clipped viewfinder viewport. */
 @keyframes mbs-scan {
-  0% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(45vh);
-  }
+  0%,
   100% {
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, 76cqh, 0);
   }
 }
 
@@ -231,9 +376,204 @@
   }
 }
 
-/* Dark theme support */
-@media (prefers-color-scheme: dark) {
-  .mbs-container {
-    background-color: #000;
+@media (prefers-reduced-motion: reduce) {
+  .mbs-container[data-state="starting"] .mbs-placeholder-icon {
+    animation: none;
   }
+
+  .mbs-control-btn {
+    transition: none;
+  }
+
+  .mbs-scan-line-indicator {
+    animation: none;
+    transform: translate3d(0, 38cqh, 0);
+  }
+
+  .mbs-scan-line-trail-down,
+  .mbs-scan-line-trail-up {
+    animation: none;
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .mbs-viewfinder-frame {
+    top: 50%;
+    width: calc(100% - 2rem);
+    height: min(48%, 25rem);
+    --mbs-radius-frame: 0.75rem;
+  }
+
+  .mbs-viewfinder-viewport {
+    border-radius: calc(var(--mbs-radius-frame) - 0.5rem);
+  }
+
+  .mbs-viewfinder-hint {
+    bottom: calc(100% + 0.75rem);
+  }
+}
+
+@media (max-width: 640px) and (max-height: 36rem) and (orientation: portrait) {
+  .mbs-viewfinder-frame {
+    top: 49%;
+    height: min(44%, 22rem);
+  }
+}
+
+@media (max-width: 640px) and (max-height: 34rem) and (orientation: portrait) {
+  .mbs-viewfinder-frame {
+    top: 46%;
+    height: min(40%, 18rem);
+  }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  .mbs-viewfinder-frame {
+    top: 46%;
+    width: min(72%, 44rem);
+    height: calc(100% - 9rem);
+  }
+
+  .mbs-viewfinder-hint {
+    top: 0.75rem;
+    bottom: auto;
+    z-index: 2;
+    background: var(--mbs-control-opaque);
+  }
+}
+
+/* Component-sized responsive rules override viewport fallbacks when supported. */
+@container mbs-scanner (max-width: 640px) {
+  .mbs-viewfinder-frame {
+    top: 50%;
+    width: calc(100% - 2rem);
+    height: min(48%, 25rem);
+    --mbs-radius-frame: 0.75rem;
+  }
+
+  .mbs-viewfinder-viewport {
+    border-radius: calc(var(--mbs-radius-frame) - 0.5rem);
+  }
+
+  .mbs-viewfinder-hint {
+    top: 0.75rem;
+    bottom: auto;
+    z-index: 2;
+    background: var(--mbs-control-opaque);
+  }
+}
+
+@container mbs-scanner (max-width: 640px) and (max-height: 576px) and (max-aspect-ratio: 1 / 1) {
+  .mbs-viewfinder-frame {
+    top: 49%;
+    height: min(44%, 22rem);
+  }
+}
+
+@container mbs-scanner (max-width: 640px) and (max-height: 544px) and (max-aspect-ratio: 1 / 1) {
+  .mbs-viewfinder-frame {
+    top: 46%;
+    height: min(40%, 18rem);
+  }
+}
+
+@container mbs-scanner (max-width: 640px) and (max-height: 400px) and (max-aspect-ratio: 1 / 1) {
+  .mbs-viewfinder-frame {
+    top: 39.5%;
+    height: min(33%, 8rem);
+  }
+}
+
+@container mbs-scanner (max-height: 560px) and (min-aspect-ratio: 1 / 1) {
+  .mbs-viewfinder-frame {
+    top: 46%;
+    width: min(72%, 44rem);
+    height: calc(100% - min(9rem, 144px));
+  }
+
+  .mbs-viewfinder-hint {
+    top: 0.75rem;
+    bottom: auto;
+    z-index: 2;
+    background: var(--mbs-control-opaque);
+  }
+}
+
+@container mbs-scanner (max-width: 640px) and (max-height: 480px) and (max-aspect-ratio: 1 / 1) {
+  .mbs-placeholder-icon {
+    top: 36%;
+  }
+}
+
+/* Decorative standby marks yield when enlarged text consumes the narrow layout. */
+@container mbs-scanner (max-width: 14rem) {
+  .mbs-placeholder-icon,
+  .mbs-viewfinder-hint {
+    visibility: hidden;
+  }
+}
+
+@container mbs-scanner (max-width: 14rem) and (max-height: 400px) and (max-aspect-ratio: 1 / 1) {
+  .mbs-viewfinder-frame {
+    top: 46%;
+    height: 18%;
+  }
+}
+
+@media (forced-colors: active) {
+  .mbs-placeholder-icon {
+    color: CanvasText;
+    opacity: 1;
+    filter: none;
+  }
+
+  .mbs-viewfinder-frame {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+
+  .mbs-viewfinder-frame::before {
+    border: 3px solid CanvasText;
+    box-shadow: none;
+  }
+
+  .mbs-viewfinder-hint {
+    border-color: CanvasText;
+    color: CanvasText;
+    background: Canvas;
+  }
+
+  .mbs-controls {
+    border: 1px solid CanvasText;
+    background: Canvas;
+  }
+
+  .mbs-control-btn {
+    border: 1px solid ButtonText;
+    color: ButtonText;
+    background: ButtonFace;
+  }
+
+  .mbs-scan-line {
+    background: CanvasText;
+    box-shadow: none;
+  }
+
+  .mbs-scan-line-trail-down,
+  .mbs-scan-line-trail-up {
+    display: none;
+  }
+}
+
+.mbs-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
