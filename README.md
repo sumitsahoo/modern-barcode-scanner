@@ -308,7 +308,6 @@ Choose accent and background colors with sufficient contrast for your applicatio
 | Token                  | Default                       | Purpose                                    |
 | ---------------------- | ----------------------------- | ------------------------------------------ |
 | `--mbs-primary`        | `oklch(53% 0.21 256)`         | Viewfinder brackets and primary accent     |
-| `--mbs-primary-dark`   | `oklch(46% 0.2 256)`          | Darker accent state                        |
 | `--mbs-scan-color`     | `var(--mbs-primary)`          | Animated scan line and restrained trail    |
 | `--mbs-bg`             | `oklch(98.5% 0.004 250)`      | Scanner background                         |
 | `--mbs-bg-secondary`   | `oklch(95.5% 0.012 250)`      | Background highlight                       |
@@ -390,7 +389,7 @@ This library is built for speed and reliability:
 
 This project uses [**Vite+**](https://viteplus.dev) (`vp`) as its unified toolchain for Vite, Vitest, Oxlint, Oxfmt, Rolldown, tsdown, and Vite Task workflows. Development requires Node.js `^22.22.2`, `^24.15.0`, or `>=26.0.0` and npm `>=11.5.1`. The npm scripts invoke the locally installed `vp` binary.
 
-Dependency freshness was rechecked on 2026-08-20: the locked direct dependency set, Playwright browser bundle, ZXing-C++ 3.1.1 engine, and Emscripten 6.0.7 toolchain were current, `npm outdated` was empty, and the dependency audit reported no known vulnerabilities. React 18 and 19 remain the supported peer ranges even though development and verification use the current React 19 line.
+Dependency freshness was rechecked on 2026-08-23: the locked direct dependency set, Playwright browser bundle, ZXing-C++ 3.1.1 engine, and Emscripten 6.0.8 toolchain were current, `npm outdated` was empty, and the dependency audit reported no known vulnerabilities. React 18 and 19 remain the supported peer ranges even though development and verification use the current React 19 line.
 
 ```bash
 # Install the exact locked dependency graph (includes Vite+)
@@ -443,4 +442,4 @@ Please refer to the [LICENSE](./LICENSE) file for the project license and [THIRD
 ## 🤝 Credits
 
 - Barcode decoding powered by this repository's pinned, reader-only [ZXing-C++](https://github.com/zxing-cpp/zxing-cpp) WebAssembly build.
-- WebAssembly runtime generated with the pinned [Emscripten 6.0.7](https://emscripten.org/) toolchain.
+- WebAssembly runtime generated with the pinned [Emscripten 6.0.8](https://emscripten.org/) toolchain.

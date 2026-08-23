@@ -8,7 +8,6 @@
 /* Component-scoped design tokens - Light Mode (default) */
 .mbs-container {
   --mbs-primary: oklch(53% 0.21 256);
-  --mbs-primary-dark: oklch(46% 0.2 256);
   --mbs-scan-color: var(--mbs-primary);
   --mbs-bg: oklch(98.5% 0.004 250);
   --mbs-bg-secondary: oklch(95.5% 0.012 250);

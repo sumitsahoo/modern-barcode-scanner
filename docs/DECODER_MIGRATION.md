@@ -10,7 +10,7 @@ The engine is a reader-only [ZXing-C++](https://github.com/zxing-cpp/zxing-cpp) 
 
 | Goal                        | Decision                                                                                                                                                                     |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Modern technology           | Pin the current stable ZXing-C++ 3.1.1 and Emscripten 6.0.7 releases; build C++20 to WebAssembly.                                                                            |
+| Modern technology           | Pin the current stable ZXing-C++ 3.1.1 and Emscripten 6.0.8 releases; build C++20 to WebAssembly.                                                                            |
 | Better performance          | Compile reader-only at `-O3` with interprocedural optimization, score frame quality off-thread, coalesce queued work, prioritize the viewfinder, and reuse luminance memory. |
 | Modular design              | Keep camera capture, worker scheduling, engine provider, result normalization, and generated runtime in separate modules.                                                    |
 | Smart future enhancements   | Preserve an engine-neutral `BarcodeDecoder` contract and decode options for format hints and deeper detection passes.                                                        |
@@ -34,11 +34,11 @@ The public `ScanResult`, component props, ref methods, and zero-bundler-configur
 - ZXing-C++ version: `3.1.1`
 - ZXing-C++ commit: `287c85df6f961c8efbfb5ffd736cd9457b8b890e`
 - Source archive SHA-256: `97d952c661b1f79d21aacc2ec544ef05c4d1465f55692cc49622ea6a8166ca7b`
-- Emscripten: `6.0.7`
-- Emscripten compiler commit: `4483d70a78098ed5d860dff2dc21f3025b2da2ee`
-- Container index digest: `sha256:71190e58eab340c692c0c3bb9741705f5c9625766a561c906dc6c01b1ed6d761`
+- Emscripten: `6.0.8`
+- Emscripten compiler commit: `aeb67926e7de656da38bc807d83050af93578758`
+- Container index digest: `sha256:f174124ff798a3ead1abef247d9a849c270b642d552fea500a42565ff210f765`
 - Reproducible build platform: `linux/amd64`
-- Platform image digest: `sha256:66f1ef34e9d2f91b3238284fd4c8f33c8eaa7fd3e4de44d52f92d62199f13c2b`
+- Platform image digest: `sha256:8714ed3a9fb585e662c931259a996bac36a57a8dd34b81e8277436fd77364475`
 - Optimization: reader-only `-O3` with CMake interprocedural/ThinLTO optimization
 - Writers and filesystem support: disabled
 - C++ exception catches: enabled only on the JavaScript boundary wrapper so raw Emscripten exception pointers never reach consumers
@@ -55,7 +55,7 @@ npm run engine:verify
 
 The build permits HTTPS redirects only, uses bounded retries and timeouts, verifies the exact source archive before extracting the required reader source, and runs a platform- and digest-pinned toolchain. `engine:verify` then cross-checks the build constants, source and compiler commits, image digests, native ABI safety markers, retail-supplement and damaged-result policies, interprocedural optimization, minimized generated API, embedded license marker, generated TypeScript declaration, artifact manifest, and SBOM checksum. Dependency information is recorded in `engine/wasm/source-lock.json` and `engine/wasm/sbom.spdx.json`. License details are in `THIRD_PARTY_NOTICES.md`, `licenses/ZXING-CPP-APACHE-2.0.txt`, and `licenses/EMSCRIPTEN-MIT-NCSA.txt`.
 
-Version freshness was rechecked on 2026-08-20. ZXing-C++ 3.1.1 and Emscripten 6.0.7 were the current stable upstream releases, the locked direct npm dependency set was current, `npm outdated` returned no packages, `npm ls --depth=0` was clean, registry-signature verification reported no invalid or missing signatures, and `npm audit` reported no known vulnerabilities.
+Version freshness was rechecked on 2026-08-23. ZXing-C++ 3.1.1 and Emscripten 6.0.8 were the current stable upstream releases, the locked direct npm dependency set was current, `npm outdated` returned no packages, `npm ls --depth=0` was clean, registry-signature verification reported no invalid or missing signatures, and `npm audit` reported no known vulnerabilities.
 
 Both CI and the npm publish job rebuild the engine and require a byte-for-byte clean generated diff before continuing. This prevents a release from using an artifact that does not correspond to the reviewed binding, locked ZXing source, and compiler image.
 
@@ -121,10 +121,10 @@ npm pack --dry-run
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Unit and integration tests  | 18 files and 176/176 tests passed in both default and serialized modes, including native-ABI boundaries, the real-image corpus, frame quality, worker recovery, camera lifecycle, and UI regressions.                                             |
 | Browser matrix              | 33 scheduled across the selected projects: 31 passed, with two WebKit forced-colors assertions skipped as expected because that emulation is Chromium-specific. The run includes inline-worker/layout coverage and the Chromium fake-camera path. |
-| Responsive visual audit     | 45 base state/layout combinations plus enlarged-text, DPR, ultra-short, embedded-host, hostile-content, theme-extreme, and rendered-pixel stress passes. The final independent Hallmark audit found 0 critical/0 major/0 minor issues.            |
+| Responsive visual audit     | 45 base state/layout combinations plus enlarged-text, DPR, ultra-short, embedded-host, hostile-content, theme-extreme, and rendered-pixel stress passes. A follow-up 320 × 360/200% paint check found 0 critical/1 major/0 minor issues.          |
 | Dependency audit            | Direct dependencies current; clean top-level tree and registry signatures; 0 known vulnerabilities.                                                                                                                                               |
-| Engine reproducibility      | Three clean fixed-platform builds produced the identical SHA-256 `a08748586cbebc750924165914feeb6adb0f19e13e6523407d6983192e39d207`; the 986,954-byte artifact is 2.09% smaller.                                                                  |
-| Production bundle           | ESM 1,350.45 kB raw / 464.07 kB gzip; CJS 1,325.70 kB raw / 461.03 kB gzip; CSS 11.16 kB raw / 2.50 kB gzip.                                                                                                                                      |
+| Engine reproducibility      | A clean fixed-platform Emscripten 6.0.8 build produced SHA-256 `523ad104cfe8e1129cfe503f99f5b58c1070bec1be0d9bdb7960c015545e7413`; the generated artifact is 988,087 bytes.                                                                       |
+| Production bundle           | ESM 1,352.09 kB raw / 464.50 kB gzip; CJS 1,327.32 kB raw / 461.33 kB gzip; CSS 11.12 kB raw / 2.49 kB gzip.                                                                                                                                      |
 | Package dry run             | 60 files; approximately 1.01 MB tarball / 2.97 MB unpacked; no bundled npm dependencies.                                                                                                                                                          |
 | Local warm decode benchmark | Warm 392×392 QR: focused mean 1.0571 ms (945.96 scans/s); enhanced mean 1.2405 ms (806.10 scans/s). The focused path was 1.17× faster.                                                                                                            |
 
